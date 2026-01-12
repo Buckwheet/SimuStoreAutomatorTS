@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimuStore Automator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 0;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+
+        /* Sticky Header */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .quantity-input {
+            width: 60px;
+            padding: 6px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        /* Item Table */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #343a40;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Progress Bar */
+        #progress-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            height: 20px;
+            display: none;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #28a745;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+            transition: width 0.3s ease;
+        }
+
+        #status {
+            font-weight: 600;
+            min-height: 20px;
+        }
+
+        /* Cart Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal {
+            background: white;
+            width: 600px;
+            max-width: 90%;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .modal-footer {
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-total {
+            font-weight: bold;
+            text-align: right;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sticky-header">
+        <div class="header-top">
+            <h1>SimuStore Automator</h1>
+            <div class="controls">
+                <button id="cartBtn" class="btn-warning" onclick="toggleCart()">🛒 Cart (0)</button>
+                <button id="launchBtn" class="btn-primary">Launch Browser</button>
+                <button id="refreshBtn" class="btn-secondary">Refresh List</button>
+                <button id="shutdownBtn" class="btn-danger" style="margin-left: 20px;">Stop Service</button>
+            </div>
+        </div>
+        <div id="status">Ready.</div>
+        <div id="progress-container">
+            <div id="progress-bar">0%</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <table id="itemTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Cost</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Shopping Cart</h2>
+                <button onclick="toggleCart()"
+                    style="background:none; border:none; font-size: 20px; color: #555;">&times;</button>
+            </div>
+            <div class="modal-body" id="cartItems">
+                <p style="text-align:center; color:#777;">Your cart is empty.</p>
+            </div>
+            <div class="cart-total" id="cartTotal">Total: 0 SimuCoins</div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="clearCart()">Clear Cart</button>
+                <button class="btn-success" onclick="checkoutCart()">Checkout All</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const tableBody = document.querySelector('#itemTable tbody');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const cartBtn = document.getElementById('cartBtn');
+        const cartItemsDiv = document.getElementById('cartItems');
+        const cartTotalDiv = document.getElementById('cartTotal');
+        const cartModal = document.getElementById('cartModal');
+
+        let cart = [];
+
+        // --- Core Functions ---
+
+        document.getElementById('launchBtn').addEventListener('click', async () => {
+            statusDiv.innerText = "Launching browser...";
+            try {
+                await fetch('/api/launch');
+                statusDiv.innerText = "Browser launched. Please log in manually.";
+            } catch (e) { statusDiv.innerText = "Error: " + e.message; }
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', loadItems);
+
+        document.getElementById('shutdownBtn').addEventListener('click', async () => {
+            if (!confirm("Are you sure you want to stop the SimuStore Automator service? You will need to restart the server manually to use it again.")) return;
+
+            statusDiv.innerText = "Shutting down...";
+            try {
+                await fetch('/api/shutdown', { method: 'POST' });
+                statusDiv.innerText = "Service stopped. You can close this tab.";
+                document.querySelectorAll('button').forEach(b => b.disabled = true);
+            } catch (e) {
+                statusDiv.innerText = "Error stopping service: " + e.message;
+            }
+        });
+
+        async function loadItems() {
+            statusDiv.innerText = "Loading items...";
+            tableBody.innerHTML = '';
+            try {
+                const res = await fetch('/api/items');
+                if (!res.ok) throw new Error(await res.text());
+                const items = await res.json();
+
+                if (items.length === 0) {
+                    statusDiv.innerText = "No items found on the current page.";
+                    return;
+                }
+
+                items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                    <td>${item.id}</td>
+                    <td><strong>${item.name}</strong></td>
+                    <td>${item.cost.toLocaleString()} SC</td>
+                    <td style="display:flex; gap:5px; align-items:center;">
+                        <input type="number" value="1" min="1" class="quantity-input" id="qty-${item.id}">
+                        <button class="btn-secondary" onclick="addToCart('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.cost})">Add to Cart</button>
+                        <button class="btn-success" onclick="buyItem('${item.id}', ${item.cost})">Buy Now</button>
+                    </td>
+                `;
+                    tableBody.appendChild(tr);
+                });
+                statusDiv.innerText = `Loaded ${items.length} items.`;
+            } catch (e) {
+                statusDiv.innerText = "Error loading items: " + e.message;
+            }
+        }
+
+        // --- Single Purchase ---
+        window.buyItem = async (id, cost) => {
+            const qtyInput = document.getElementById(`qty-${id}`);
+            const qty = parseInt(qtyInput.value) || 1;
+            if (!confirm(`Buy ${qty} x Item ${id} now?`)) return;
+            runPurchase('/api/buy', { id, cost, quantity: qty });
+        };
+
+        // --- Cart Logic ---
+        window.addToCart = (id, name, cost) => {
+            const qtyInput = document.getElementById(`qty-${id}`);
+            const qty = parseInt(qtyInput.value) || 1;
+
+            const existing = cart.find(i => i.id === id);
+            if (existing) {
+                existing.quantity += qty;
+            } else {
+                cart.push({ id, name, cost, quantity: qty });
+            }
+            updateCartUI();
+            statusDiv.innerText = `Added ${qty} x ${name} to cart.`;
+        };
+
+        window.toggleCart = () => {
+            cartModal.style.display = cartModal.style.display === 'flex' ? 'none' : 'flex';
+            renderCartItems();
+        };
+
+        // Close modal on outside click
+        cartModal.addEventListener('click', (e) => {
+            if (e.target === cartModal) toggleCart();
+        });
+
+        function updateCartUI() {
+            const totalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+            cartBtn.innerText = `🛒 Cart (${totalCount})`;
+        }
+
+        function renderCartItems() {
+            if (cart.length === 0) {
+                cartItemsDiv.innerHTML = '<p style="text-align:center; color:#777;">Your cart is empty.</p>';
+                cartTotalDiv.innerText = 'Total: 0 SimuCoins';
+                return;
+            }
+
+            cartItemsDiv.innerHTML = '';
+            let totalCost = 0;
+
+            cart.forEach((item, index) => {
+                const itemTotal = item.cost * item.quantity;
+                totalCost += itemTotal;
+
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                <div>
+                    <strong>${item.name}</strong><br>
+                    <span style="font-size:12px; color:#555;">${item.cost} SC x ${item.quantity}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <strong>${itemTotal.toLocaleString()} SC</strong>
+                    <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="removeFromCart(${index})">Remove</button>
+                </div>
+            `;
+                cartItemsDiv.appendChild(div);
+            });
+
+            cartTotalDiv.innerText = `Total: ${totalCost.toLocaleString()} SimuCoins`;
+        }
+
+        window.removeFromCart = (index) => {
+            cart.splice(index, 1);
+            updateCartUI();
+            renderCartItems();
+        };
+
+        window.clearCart = () => {
+            if (confirm("Clear the entire cart?")) {
+                cart = [];
+                updateCartUI();
+                renderCartItems();
+            }
+        };
+
+        window.checkoutCart = () => {
+            if (cart.length === 0) return;
+            if (!confirm(`Are you sure you want to purchase all ${cart.length} items?`)) return;
+
+            toggleCart(); // Close modal
+            runPurchase('/api/buy-cart', { cart });
+        };
+
+        // --- Execution ---
+        async function runPurchase(endpoint, body) {
+            statusDiv.innerText = `Starting purchase...`;
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.innerText = '0%';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                // Stream reader logic
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const data = JSON.parse(line);
+
+                            // Handle progress
+                            if (data.current && data.total) {
+                                const percent = Math.round((data.current / data.total) * 100);
+                                progressBar.style.width = `${percent}%`;
+                                progressBar.innerText = `${percent}%`;
+                                statusDiv.innerText = data.message || `Processing ${data.current}/${data.total}...`;
+                            }
+
+                            // Handle completion
+                            if (data.status === 'complete') {
+                                statusDiv.innerText = "All purchases complete!";
+                                progressBar.style.width = '100%';
+                                progressBar.innerText = 'Done!';
+                                // If it was a cart checkout, clear cart
+                                if (endpoint.includes('cart')) {
+                                    cart = [];
+                                    updateCartUI();
+                                }
+                            }
+
+                            if (data.error) {
+                                statusDiv.innerText = "Error: " + data.error;
+                                progressBar.style.backgroundColor = '#dc3545';
+                            }
+                        } catch (e) { console.error("Parse error:", e); }
+                    }
+                }
+            } catch (e) {
+                statusDiv.innerText = "Connection error: " + e.message;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
