@@ -1,25 +1,28 @@
 {
-    "name": "simustore-automator-ts",
-    "version": "1.0.0",
-    "description": "TypeScript version of SimuStoreAutomator",
-    "main": "dist/server.js",
-    "scripts": {
-        "start": "node dist/server.js",
-        "dev": "nodemon src/server.ts",
-        "build": "tsc"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "express": "^4.18.2",
-        "puppeteer": "^24.34.0"
-    },
-    "devDependencies": {
-        "@types/express": "^4.17.21",
-        "@types/node": "^20.10.6",
-        "nodemon": "^3.0.2",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.3.3"
-    }
+	"name": "simustore-automator-ts",
+	"version": "1.0.0",
+	"description": "TypeScript version of SimuStoreAutomator",
+	"main": "dist/server.js",
+	"scripts": {
+		"start": "node dist/server.js",
+		"dev": "nodemon src/server.ts",
+		"build": "tsc",
+		"prepare": "husky"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"express": "^4.18.2",
+		"puppeteer": "^24.34.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.11",
+		"@types/express": "^4.17.21",
+		"@types/node": "^20.10.6",
+		"husky": "^9.1.7",
+		"nodemon": "^3.0.2",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.3.3"
+	}
 }

@@ -312,7 +312,7 @@
             try {
                 await fetch('/api/launch');
                 statusDiv.innerText = "Browser launched. Please log in manually.";
-            } catch (e) { statusDiv.innerText = "Error: " + e.message; }
+            } catch (e) { statusDiv.innerText = `Error: ${e.message}`; }
         });
 
         document.getElementById('refreshBtn').addEventListener('click', loadItems);
@@ -324,9 +324,9 @@
             try {
                 await fetch('/api/shutdown', { method: 'POST' });
                 statusDiv.innerText = "Service stopped. You can close this tab.";
-                document.querySelectorAll('button').forEach(b => b.disabled = true);
+                for (const b of document.querySelectorAll('button')) { b.disabled = true; }
             } catch (e) {
-                statusDiv.innerText = "Error stopping service: " + e.message;
+                statusDiv.innerText = `Error stopping service: ${e.message}`;
             }
         });
 
@@ -343,7 +343,7 @@
                     return;
                 }
 
-                items.forEach(item => {
+                for (const item of items) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                     <td>${item.id}</td>
@@ -356,17 +356,17 @@
                     </td>
                 `;
                     tableBody.appendChild(tr);
-                });
+                }
                 statusDiv.innerText = `Loaded ${items.length} items.`;
             } catch (e) {
-                statusDiv.innerText = "Error loading items: " + e.message;
+                statusDiv.innerText = `Error loading items: ${e.message}`;
             }
         }
 
         // --- Single Purchase ---
         window.buyItem = async (id, cost) => {
             const qtyInput = document.getElementById(`qty-${id}`);
-            const qty = parseInt(qtyInput.value) || 1;
+            const qty = parseInt(qtyInput.value, 10) || 1;
             if (!confirm(`Buy ${qty} x Item ${id} now?`)) return;
             runPurchase('/api/buy', { id, cost, quantity: qty });
         };
@@ -374,7 +374,7 @@
         // --- Cart Logic ---
         window.addToCart = (id, name, cost) => {
             const qtyInput = document.getElementById(`qty-${id}`);
-            const qty = parseInt(qtyInput.value) || 1;
+            const qty = parseInt(qtyInput.value, 10) || 1;
 
             const existing = cart.find(i => i.id === id);
             if (existing) {
@@ -411,7 +411,8 @@
             cartItemsDiv.innerHTML = '';
             let totalCost = 0;
 
-            cart.forEach((item, index) => {
+            let index = 0;
+            for (const item of cart) {
                 const itemTotal = item.cost * item.quantity;
                 totalCost += itemTotal;
 
@@ -428,7 +429,8 @@
                 </div>
             `;
                 cartItemsDiv.appendChild(div);
-            });
+                index++;
+            }
 
             cartTotalDiv.innerText = `Total: ${totalCost.toLocaleString()} SimuCoins`;
         }
@@ -508,14 +510,14 @@
                             }
 
                             if (data.error) {
-                                statusDiv.innerText = "Error: " + data.error;
+                                statusDiv.innerText = `Error: ${data.error}`;
                                 progressBar.style.backgroundColor = '#dc3545';
                             }
                         } catch (e) { console.error("Parse error:", e); }
                     }
                 }
             } catch (e) {
-                statusDiv.innerText = "Connection error: " + e.message;
+                statusDiv.innerText = `Connection error: ${e.message}`;
             }
         }
     </script>
