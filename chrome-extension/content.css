@@ -3,6 +3,8 @@
 	top: 10px;
 	right: 10px;
 	width: 360px;
+	min-width: 280px;
+	min-height: 200px;
 	max-height: 80vh;
 	background: #fff;
 	border: 1px solid #ccc;
@@ -14,13 +16,36 @@
 	color: #333;
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
+	resize: both;
+	overflow: auto;
 }
 #ssa-panel.collapsed {
 	max-height: 42px;
+	min-height: unset;
+	resize: none;
 }
 #ssa-panel.collapsed .ssa-body {
 	display: none;
+}
+
+#ssa-reopen {
+	position: fixed;
+	bottom: 14px;
+	right: 14px;
+	z-index: 99999;
+	background: #343a40;
+	color: #fff;
+	border: none;
+	border-radius: 20px;
+	padding: 8px 16px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+#ssa-reopen:hover {
+	background: #495057;
 }
 
 .ssa-header {

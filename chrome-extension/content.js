@@ -64,6 +64,7 @@
       <span>SimuStore Automator</span>
       <div>
         <button id="ssa-collapse" title="Collapse">−</button>
+        <button id="ssa-close" title="Close">✕</button>
       </div>
     </div>
     <div class="ssa-body">
@@ -117,6 +118,24 @@
 	// --- Collapse ---
 	document.getElementById("ssa-collapse").addEventListener("click", () => {
 		panel.classList.toggle("collapsed");
+	});
+
+	// --- Close / Reopen ---
+	const reopenBtn = document.createElement("button");
+	reopenBtn.id = "ssa-reopen";
+	reopenBtn.textContent = "SSA";
+	reopenBtn.title = "Open SimuStore Automator";
+	reopenBtn.style.display = "none";
+	document.body.appendChild(reopenBtn);
+
+	document.getElementById("ssa-close").addEventListener("click", () => {
+		panel.style.display = "none";
+		reopenBtn.style.display = "";
+	});
+
+	reopenBtn.addEventListener("click", () => {
+		panel.style.display = "";
+		reopenBtn.style.display = "none";
 	});
 
 	// --- Refresh ---
