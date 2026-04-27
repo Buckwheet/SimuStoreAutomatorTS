@@ -327,4 +327,63 @@
 	document.addEventListener("mouseup", () => {
 		dragging = false;
 	});
+
+	// --- Resizable from all edges and corners ---
+	const edges = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
+	for (const dir of edges) {
+		const handle = document.createElement("div");
+		handle.className = `ssa-resize ssa-resize-${dir}`;
+		panel.appendChild(handle);
+	}
+
+	let resizing = null;
+	let startX, startY, startW, startH, startL, startT;
+
+	panel.addEventListener("mousedown", (e) => {
+		const cl = e.target.classList;
+		const dir = edges.find((d) => cl.contains(`ssa-resize-${d}`));
+		if (!dir) return;
+		e.preventDefault();
+		resizing = dir;
+		const rect = panel.getBoundingClientRect();
+		startX = e.clientX;
+		startY = e.clientY;
+		startW = rect.width;
+		startH = rect.height;
+		startL = rect.left;
+		startT = rect.top;
+	});
+
+	document.addEventListener("mousemove", (e) => {
+		if (!resizing) return;
+		e.preventDefault();
+		const dxR = e.clientX - startX;
+		const dyR = e.clientY - startY;
+		const minW = 260,
+			minH = 120;
+
+		if (resizing.includes("e")) {
+			panel.style.width = `${Math.max(minW, startW + dxR)}px`;
+		}
+		if (resizing.includes("w")) {
+			const newW = Math.max(minW, startW - dxR);
+			panel.style.width = `${newW}px`;
+			panel.style.left = `${startL + startW - newW}px`;
+			panel.style.right = "auto";
+		}
+		if (resizing.includes("s")) {
+			panel.style.height = `${Math.max(minH, startH + dyR)}px`;
+			panel.style.maxHeight = "none";
+		}
+		if (resizing.includes("n")) {
+			const newH = Math.max(minH, startH - dyR);
+			panel.style.height = `${newH}px`;
+			panel.style.maxHeight = "none";
+			panel.style.top = `${startT + startH - newH}px`;
+		}
+	});
+
+	document.addEventListener("mouseup", () => {
+		resizing = null;
+	});
 })();

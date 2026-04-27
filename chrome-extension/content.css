@@ -17,13 +17,11 @@
 	color: #333;
 	display: flex;
 	flex-direction: column;
-	resize: both;
-	overflow: auto;
+	overflow: hidden;
 }
 #ssa-panel.collapsed {
 	max-height: 42px;
 	min-height: unset;
-	resize: none;
 }
 #ssa-panel.collapsed .ssa-body {
 	display: none;
@@ -212,4 +210,66 @@
 	font-weight: 700;
 	padding: 8px 0;
 	font-size: 15px;
+}
+
+/* --- Resize handles (edges + corners) --- */
+.ssa-resize {
+	position: absolute;
+	z-index: 100000;
+}
+.ssa-resize-n {
+	top: -4px;
+	left: 8px;
+	right: 8px;
+	height: 8px;
+	cursor: n-resize;
+}
+.ssa-resize-s {
+	bottom: -4px;
+	left: 8px;
+	right: 8px;
+	height: 8px;
+	cursor: s-resize;
+}
+.ssa-resize-e {
+	right: -4px;
+	top: 8px;
+	bottom: 8px;
+	width: 8px;
+	cursor: e-resize;
+}
+.ssa-resize-w {
+	left: -4px;
+	top: 8px;
+	bottom: 8px;
+	width: 8px;
+	cursor: w-resize;
+}
+.ssa-resize-ne {
+	top: -4px;
+	right: -4px;
+	width: 12px;
+	height: 12px;
+	cursor: ne-resize;
+}
+.ssa-resize-nw {
+	top: -4px;
+	left: -4px;
+	width: 12px;
+	height: 12px;
+	cursor: nw-resize;
+}
+.ssa-resize-se {
+	bottom: -4px;
+	right: -4px;
+	width: 12px;
+	height: 12px;
+	cursor: se-resize;
+}
+.ssa-resize-sw {
+	bottom: -4px;
+	left: -4px;
+	width: 12px;
+	height: 12px;
+	cursor: sw-resize;
 }
