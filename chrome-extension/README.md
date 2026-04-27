@@ -92,3 +92,53 @@ chrome-extension/
 | Auth token / CSRF protection | N/A (same-origin) | Yes |
 
 Choose the extension for simplicity. Choose the server version if you want a dedicated UI or plan to extend the automation further.
+
+---
+
+## Security Audit
+
+Chrome extensions can be dangerous — malicious ones have been caught stealing auth tokens, cookies, and session data from other websites. This extension is designed to be fully auditable so you can verify it yourself in minutes.
+
+### What this extension CAN access
+
+- The DOM of `store.play.net/store/purchase/*` pages (to read item names, prices, and IDs)
+- The store's own purchase endpoint (`POST /store/PurchaseItemConfirmed`) using your existing login session
+
+### What this extension CANNOT access
+
+- **Any other website.** The manifest restricts it to `store.play.net` only. Chrome enforces this at the browser level.
+- **Your cookies.** The `permissions` array is empty — no `cookies` permission is requested.
+- **Other tabs.** No `tabs`, `activeTab`, or `webNavigation` permissions.
+- **Network traffic.** No `webRequest` or `webRequestBlocking` permissions.
+- **Local storage from other sites.** No `storage` permission, no cross-origin access.
+
+### What the code does NOT contain
+
+You can verify all of this by reading `content.js` (311 lines, unminified, unobfuscated):
+
+- **No background script or service worker.** Nothing runs when you're not on the store page.
+- **No Chrome API calls.** Zero use of `chrome.runtime`, `chrome.cookies`, `chrome.storage`, `chrome.tabs`, or any other `chrome.*` API.
+- **No external network requests.** Every `fetch()` call goes to `https://store.play.net/...` and nowhere else. No analytics, no telemetry, no phone-home.
+- **No `eval()`, `new Function()`, or dynamic script injection.** No obfuscated or dynamically generated code.
+- **No data exfiltration patterns.** No `navigator.sendBeacon()`, no `new Image().src`, no hidden iframes, no WebSocket connections.
+
+### Manifest permissions breakdown
+
+```json
+{
+  "permissions": [],                                          // ← empty, no special powers
+  "host_permissions": ["https://store.play.net/*"],           // ← only this domain
+  "content_scripts": [{
+    "matches": ["https://store.play.net/store/purchase/*"]    // ← only purchase pages
+  }]
+}
+```
+
+### How to verify
+
+1. Open `manifest.json` — confirm `permissions` is `[]` and `host_permissions` only lists `store.play.net`.
+2. Open `content.js` — search for `fetch(`. Every call goes to `store.play.net`. There are no other URLs.
+3. Search for `chrome.` — zero results. The extension uses no Chrome APIs.
+4. Search for `eval`, `Function(`, `sendBeacon`, `WebSocket`, `new Image` — zero results.
+
+If you find anything that contradicts the above, please open an issue.
