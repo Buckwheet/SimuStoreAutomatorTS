@@ -303,175 +303,203 @@
         const cartTotalDiv = document.getElementById('cartTotal');
         const cartModal = document.getElementById('cartModal');
 
+        const TOKEN = window.__AUTH_TOKEN || '';
         let cart = [];
+
+        // Auth-aware fetch helper
+        function apiFetch(url, opts = {}) {
+            opts.headers = Object.assign({ 'x-auth-token': TOKEN }, opts.headers || {});
+            return fetch(url, opts);
+        }
+
 
         // --- Core Functions ---
 
         document.getElementById('launchBtn').addEventListener('click', async () => {
-            statusDiv.innerText = "Launching browser...";
+            statusDiv.textContent = "Launching browser...";
             try {
-                await fetch('/api/launch');
-                statusDiv.innerText = "Browser launched. Please log in manually.";
-            } catch (e) { statusDiv.innerText = `Error: ${e.message}`; }
+                await apiFetch('/api/launch');
+                statusDiv.textContent = "Browser launched. Please log in manually.";
+            } catch (e) { statusDiv.textContent = `Error: ${e.message}`; }
         });
 
         document.getElementById('refreshBtn').addEventListener('click', loadItems);
 
         document.getElementById('shutdownBtn').addEventListener('click', async () => {
             if (!confirm("Are you sure you want to stop the SimuStore Automator service? You will need to restart the server manually to use it again.")) return;
-
-            statusDiv.innerText = "Shutting down...";
+            statusDiv.textContent = "Shutting down...";
             try {
-                await fetch('/api/shutdown', { method: 'POST' });
-                statusDiv.innerText = "Service stopped. You can close this tab.";
+                await apiFetch('/api/shutdown', { method: 'POST' });
+                statusDiv.textContent = "Service stopped. You can close this tab.";
                 for (const b of document.querySelectorAll('button')) { b.disabled = true; }
-            } catch (e) {
-                statusDiv.innerText = `Error stopping service: ${e.message}`;
-            }
+            } catch (e) { statusDiv.textContent = `Error stopping service: ${e.message}`; }
         });
 
         async function loadItems() {
-            statusDiv.innerText = "Loading items...";
+            statusDiv.textContent = "Loading items...";
             tableBody.innerHTML = '';
             try {
-                const res = await fetch('/api/items');
+                const res = await apiFetch('/api/items');
                 if (!res.ok) throw new Error(await res.text());
                 const items = await res.json();
 
                 if (items.length === 0) {
-                    statusDiv.innerText = "No items found on the current page.";
+                    statusDiv.textContent = "No items found on the current page.";
                     return;
                 }
 
                 for (const item of items) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                    <td>${item.id}</td>
-                    <td><strong>${item.name}</strong></td>
-                    <td>${item.cost.toLocaleString()} SC</td>
-                    <td style="display:flex; gap:5px; align-items:center;">
-                        <input type="number" value="1" min="1" class="quantity-input" id="qty-${item.id}">
-                        <button class="btn-secondary" onclick="addToCart('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.cost})">Add to Cart</button>
-                        <button class="btn-success" onclick="buyItem('${item.id}', ${item.cost})">Buy Now</button>
-                    </td>
-                `;
+
+                    const tdId = document.createElement('td');
+                    tdId.textContent = item.id;
+
+                    const tdName = document.createElement('td');
+                    const strong = document.createElement('strong');
+                    strong.textContent = item.name;
+                    tdName.appendChild(strong);
+
+                    const tdCost = document.createElement('td');
+                    tdCost.textContent = `${item.cost.toLocaleString()} SC`;
+
+                    const tdAction = document.createElement('td');
+                    tdAction.style.cssText = 'display:flex; gap:5px; align-items:center;';
+
+                    const qtyInput = document.createElement('input');
+                    qtyInput.type = 'number';
+                    qtyInput.value = '1';
+                    qtyInput.min = '1';
+                    qtyInput.className = 'quantity-input';
+                    qtyInput.id = `qty-${item.id}`;
+
+                    const cartButton = document.createElement('button');
+                    cartButton.className = 'btn-secondary';
+                    cartButton.textContent = 'Add to Cart';
+                    cartButton.addEventListener('click', () => addToCart(item.id, item.name, item.cost));
+
+                    const buyButton = document.createElement('button');
+                    buyButton.className = 'btn-success';
+                    buyButton.textContent = 'Buy Now';
+                    buyButton.addEventListener('click', () => buyItem(item.id, item.cost));
+
+                    tdAction.append(qtyInput, cartButton, buyButton);
+                    tr.append(tdId, tdName, tdCost, tdAction);
                     tableBody.appendChild(tr);
                 }
-                statusDiv.innerText = `Loaded ${items.length} items.`;
+                statusDiv.textContent = `Loaded ${items.length} items.`;
             } catch (e) {
-                statusDiv.innerText = `Error loading items: ${e.message}`;
+                statusDiv.textContent = `Error loading items: ${e.message}`;
             }
         }
 
         // --- Single Purchase ---
-        window.buyItem = async (id, cost) => {
+        function buyItem(id, cost) {
             const qtyInput = document.getElementById(`qty-${id}`);
             const qty = parseInt(qtyInput.value, 10) || 1;
             if (!confirm(`Buy ${qty} x Item ${id} now?`)) return;
             runPurchase('/api/buy', { id, cost, quantity: qty });
-        };
+        }
 
         // --- Cart Logic ---
-        window.addToCart = (id, name, cost) => {
+        function addToCart(id, name, cost) {
             const qtyInput = document.getElementById(`qty-${id}`);
             const qty = parseInt(qtyInput.value, 10) || 1;
-
             const existing = cart.find(i => i.id === id);
-            if (existing) {
-                existing.quantity += qty;
-            } else {
-                cart.push({ id, name, cost, quantity: qty });
-            }
+            if (existing) { existing.quantity += qty; }
+            else { cart.push({ id, name, cost, quantity: qty }); }
             updateCartUI();
-            statusDiv.innerText = `Added ${qty} x ${name} to cart.`;
-        };
+            statusDiv.textContent = `Added ${qty} x ${name} to cart.`;
+        }
 
         window.toggleCart = () => {
             cartModal.style.display = cartModal.style.display === 'flex' ? 'none' : 'flex';
             renderCartItems();
         };
 
-        // Close modal on outside click
-        cartModal.addEventListener('click', (e) => {
-            if (e.target === cartModal) toggleCart();
-        });
+        cartModal.addEventListener('click', (e) => { if (e.target === cartModal) toggleCart(); });
 
         function updateCartUI() {
             const totalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-            cartBtn.innerText = `🛒 Cart (${totalCount})`;
+            cartBtn.textContent = `🛒 Cart (${totalCount})`;
         }
 
         function renderCartItems() {
+            cartItemsDiv.innerHTML = '';
             if (cart.length === 0) {
-                cartItemsDiv.innerHTML = '<p style="text-align:center; color:#777;">Your cart is empty.</p>';
-                cartTotalDiv.innerText = 'Total: 0 SimuCoins';
+                const p = document.createElement('p');
+                p.style.cssText = 'text-align:center; color:#777;';
+                p.textContent = 'Your cart is empty.';
+                cartItemsDiv.appendChild(p);
+                cartTotalDiv.textContent = 'Total: 0 SimuCoins';
                 return;
             }
 
-            cartItemsDiv.innerHTML = '';
             let totalCost = 0;
-
-            let index = 0;
-            for (const item of cart) {
+            cart.forEach((item, index) => {
                 const itemTotal = item.cost * item.quantity;
                 totalCost += itemTotal;
 
                 const div = document.createElement('div');
                 div.className = 'cart-item';
-                div.innerHTML = `
-                <div>
-                    <strong>${item.name}</strong><br>
-                    <span style="font-size:12px; color:#555;">${item.cost} SC x ${item.quantity}</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <strong>${itemTotal.toLocaleString()} SC</strong>
-                    <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="removeFromCart(${index})">Remove</button>
-                </div>
-            `;
-                cartItemsDiv.appendChild(div);
-                index++;
-            }
 
-            cartTotalDiv.innerText = `Total: ${totalCost.toLocaleString()} SimuCoins`;
+                const info = document.createElement('div');
+                const nameStrong = document.createElement('strong');
+                nameStrong.textContent = item.name;
+                const detail = document.createElement('span');
+                detail.style.cssText = 'font-size:12px; color:#555;';
+                detail.textContent = `${item.cost} SC x ${item.quantity}`;
+                info.append(nameStrong, document.createElement('br'), detail);
+
+                const actions = document.createElement('div');
+                actions.style.cssText = 'display:flex; align-items:center; gap:10px;';
+                const costStrong = document.createElement('strong');
+                costStrong.textContent = `${itemTotal.toLocaleString()} SC`;
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn-danger';
+                removeBtn.style.cssText = 'padding:4px 8px; font-size:12px;';
+                removeBtn.textContent = 'Remove';
+                removeBtn.addEventListener('click', () => { cart.splice(index, 1); updateCartUI(); renderCartItems(); });
+                actions.append(costStrong, removeBtn);
+
+                div.append(info, actions);
+                cartItemsDiv.appendChild(div);
+            });
+
+            cartTotalDiv.textContent = `Total: ${totalCost.toLocaleString()} SimuCoins`;
         }
 
-        window.removeFromCart = (index) => {
-            cart.splice(index, 1);
-            updateCartUI();
-            renderCartItems();
-        };
-
         window.clearCart = () => {
-            if (confirm("Clear the entire cart?")) {
-                cart = [];
-                updateCartUI();
-                renderCartItems();
-            }
+            if (confirm("Clear the entire cart?")) { cart = []; updateCartUI(); renderCartItems(); }
         };
 
         window.checkoutCart = () => {
             if (cart.length === 0) return;
             if (!confirm(`Are you sure you want to purchase all ${cart.length} items?`)) return;
-
-            toggleCart(); // Close modal
+            toggleCart();
             runPurchase('/api/buy-cart', { cart });
         };
 
         // --- Execution ---
         async function runPurchase(endpoint, body) {
-            statusDiv.innerText = `Starting purchase...`;
+            statusDiv.textContent = 'Starting purchase...';
             progressContainer.style.display = 'block';
             progressBar.style.width = '0%';
-            progressBar.innerText = '0%';
+            progressBar.textContent = '0%';
+            progressBar.style.backgroundColor = '#28a745';
 
             try {
-                const response = await fetch(endpoint, {
+                const response = await apiFetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': TOKEN },
                     body: JSON.stringify(body)
                 });
 
-                // Stream reader logic
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({ error: 'Request failed' }));
+                    statusDiv.textContent = `Error: ${err.error}`;
+                    return;
+                }
+
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder("utf-8");
                 let buffer = '';
@@ -479,7 +507,6 @@
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split('\n');
                     buffer = lines.pop();
@@ -488,36 +515,27 @@
                         if (!line.trim()) continue;
                         try {
                             const data = JSON.parse(line);
-
-                            // Handle progress
                             if (data.current && data.total) {
                                 const percent = Math.round((data.current / data.total) * 100);
                                 progressBar.style.width = `${percent}%`;
-                                progressBar.innerText = `${percent}%`;
-                                statusDiv.innerText = data.message || `Processing ${data.current}/${data.total}...`;
+                                progressBar.textContent = `${percent}%`;
+                                statusDiv.textContent = data.message || `Processing ${data.current}/${data.total}...`;
                             }
-
-                            // Handle completion
                             if (data.status === 'complete') {
-                                statusDiv.innerText = "All purchases complete!";
+                                statusDiv.textContent = "All purchases complete!";
                                 progressBar.style.width = '100%';
-                                progressBar.innerText = 'Done!';
-                                // If it was a cart checkout, clear cart
-                                if (endpoint.includes('cart')) {
-                                    cart = [];
-                                    updateCartUI();
-                                }
+                                progressBar.textContent = 'Done!';
+                                if (endpoint.includes('cart')) { cart = []; updateCartUI(); }
                             }
-
                             if (data.error) {
-                                statusDiv.innerText = `Error: ${data.error}`;
+                                statusDiv.textContent = `Error: ${data.error}`;
                                 progressBar.style.backgroundColor = '#dc3545';
                             }
                         } catch (e) { console.error("Parse error:", e); }
                     }
                 }
             } catch (e) {
-                statusDiv.innerText = `Connection error: ${e.message}`;
+                statusDiv.textContent = `Connection error: ${e.message}`;
             }
         }
     </script>

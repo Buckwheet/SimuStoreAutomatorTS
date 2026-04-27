@@ -1,0 +1,20 @@
+{
+	"manifest_version": 3,
+	"name": "SimuStore Automator",
+	"version": "1.0.0",
+	"description": "Bulk-buy items from the SimuCoins store with a single click.",
+	"permissions": [],
+	"host_permissions": ["https://store.play.net/*"],
+	"content_scripts": [
+		{
+			"matches": ["https://store.play.net/store/purchase/*"],
+			"js": ["content.js"],
+			"css": ["content.css"],
+			"run_at": "document_idle"
+		}
+	],
+	"icons": {
+		"48": "icon48.png",
+		"128": "icon128.png"
+	}
+}

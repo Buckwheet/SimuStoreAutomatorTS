@@ -93,3 +93,13 @@ This tool is designed with security in mind:
 
 *   **"Browser disconnected"**: If you accidentally close the automated browser window, just click "Launch Browser" again.
 *   **"No items found"**: Make sure the automated browser window is on the actual store page with the "Buy" buttons before you click Refresh.
+
+## ⚠️ Disclaimer
+
+**Use responsibly.** This tool automates purchases on your own account using your own session. Please keep the following in mind:
+
+*   **Keep quantities reasonable.** Don't queue up hundreds of items at once. Stick to small, sensible batches. Hammering the store with rapid-fire requests is not what this tool is for and could get your account flagged or cause issues with the store.
+*   **No liability.** This software is provided **as-is, with no warranty of any kind**. The authors are not responsible for any consequences of using this tool, including but not limited to: incorrect purchases, lost SimuCoins, account actions taken by Simutronics, or any other damages.
+*   **Not affiliated with Simutronics.** This is an independent, community-made tool. It is not endorsed, sponsored, or supported by Simutronics.
+*   **Released under the ISC License.** You are free to use, modify, and distribute this software. See the `LICENSE` file or `package.json` for details.
+*   **Use at your own risk.** By using this tool, you accept full responsibility for any actions performed on your account.

@@ -1,0 +1,189 @@
+#ssa-panel {
+	position: fixed;
+	top: 10px;
+	right: 10px;
+	width: 360px;
+	max-height: 80vh;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+	z-index: 99999;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	font-size: 14px;
+	color: #333;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+#ssa-panel.collapsed {
+	max-height: 42px;
+}
+#ssa-panel.collapsed .ssa-body {
+	display: none;
+}
+
+.ssa-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 14px;
+	background: #343a40;
+	color: #fff;
+	cursor: move;
+	user-select: none;
+	font-weight: 600;
+	font-size: 14px;
+}
+.ssa-header button {
+	background: none;
+	border: none;
+	color: #fff;
+	font-size: 16px;
+	cursor: pointer;
+	padding: 0 4px;
+}
+
+.ssa-body {
+	padding: 12px;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.ssa-status {
+	padding: 8px;
+	margin-bottom: 8px;
+	background: #f8f9fa;
+	border-radius: 4px;
+	font-size: 13px;
+}
+
+.ssa-progress {
+	width: 100%;
+	height: 18px;
+	background: #e9ecef;
+	border-radius: 4px;
+	overflow: hidden;
+	margin-bottom: 10px;
+	display: none;
+}
+.ssa-progress-bar {
+	height: 100%;
+	width: 0%;
+	background: #28a745;
+	text-align: center;
+	color: #fff;
+	font-size: 11px;
+	line-height: 18px;
+	transition: width 0.3s;
+}
+
+.ssa-items {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.ssa-items li {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 0;
+	border-bottom: 1px solid #eee;
+	gap: 6px;
+}
+.ssa-items li:last-child {
+	border-bottom: none;
+}
+.ssa-item-name {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.ssa-item-cost {
+	color: #007bff;
+	font-weight: 600;
+	white-space: nowrap;
+	margin-right: 6px;
+}
+
+.ssa-items input[type="number"] {
+	width: 48px;
+	padding: 3px 4px;
+	border: 1px solid #ced4da;
+	border-radius: 4px;
+	text-align: center;
+}
+
+.ssa-btn {
+	padding: 4px 10px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 500;
+	color: #fff;
+}
+.ssa-btn-buy {
+	background: #28a745;
+}
+.ssa-btn-buy:hover {
+	background: #218838;
+}
+.ssa-btn-cart {
+	background: #6c757d;
+}
+.ssa-btn-cart:hover {
+	background: #545b62;
+}
+.ssa-btn-go {
+	background: #007bff;
+}
+.ssa-btn-go:hover {
+	background: #0056b3;
+}
+.ssa-btn-clear {
+	background: #dc3545;
+}
+.ssa-btn-clear:hover {
+	background: #c82333;
+}
+.ssa-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.ssa-tabs {
+	display: flex;
+	border-bottom: 1px solid #dee2e6;
+	margin-bottom: 8px;
+}
+.ssa-tab {
+	flex: 1;
+	padding: 6px;
+	text-align: center;
+	cursor: pointer;
+	background: #f8f9fa;
+	border: none;
+	font-size: 13px;
+	font-weight: 500;
+}
+.ssa-tab.active {
+	background: #fff;
+	border-bottom: 2px solid #007bff;
+	color: #007bff;
+}
+
+.ssa-cart-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 0;
+	border-bottom: 1px solid #eee;
+}
+.ssa-cart-total {
+	text-align: right;
+	font-weight: 700;
+	padding: 8px 0;
+	font-size: 15px;
+}

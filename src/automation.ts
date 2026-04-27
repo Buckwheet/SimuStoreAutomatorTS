@@ -1,5 +1,9 @@
 import puppeteer, { type Browser, type Page } from "puppeteer";
 
+const PURCHASE_DELAY_MS = Number(process.env.PURCHASE_DELAY_MS) || 2000;
+const STORE_URL =
+	process.env.STORE_URL || "https://store.play.net/store/purchase/gs";
+
 let browser: Browser | null = null;
 let page: Page | null = null;
 
@@ -13,197 +17,190 @@ export interface CartItem extends Item {
 	quantity: number;
 }
 
+type ProgressCallback = (current: number, total: number, msg: string) => void;
+
 export async function launchBrowser(): Promise<void> {
 	console.log("Launching browser...");
 	if (browser) {
-		console.log("Browser already instance exists.");
 		if (browser.isConnected()) {
-			console.log("Browser is connected.");
+			console.log("Browser already connected.");
 			return;
 		}
-		console.log("Browser instance found but disconnected. Re-launching...");
+		console.log("Browser disconnected. Re-launching...");
 		browser = null;
+		page = null;
 	}
 
+	browser = await puppeteer.launch({
+		headless: false,
+		defaultViewport: null,
+		args: ["--start-maximized"],
+	});
+
+	browser.on("disconnected", () => {
+		console.log("Browser disconnected.");
+		browser = null;
+		page = null;
+	});
+
+	page = await browser.newPage();
 	try {
-		browser = await puppeteer.launch({
-			headless: false,
-			defaultViewport: null,
-			args: ["--start-maximized"],
-		});
-
-		browser.on("disconnected", () => {
-			console.log("Browser disconnected.");
-			browser = null;
-			page = null;
-		});
-
-		page = await browser.newPage();
-		try {
-			await page.goto("https://store.play.net/store/purchase/gs", {
-				waitUntil: "networkidle2",
-			});
-		} catch (e) {
-			console.error("Navigation error:", e);
-		}
-		console.log("Browser launched successfully.");
+		await page.goto(STORE_URL, { waitUntil: "networkidle2" });
 	} catch (e) {
-		console.error("Failed to launch browser:", e);
-		throw e;
+		console.error("Navigation error:", e);
+	}
+	console.log("Browser launched successfully.");
+}
+
+export async function closeBrowser(): Promise<void> {
+	if (browser) {
+		try {
+			await browser.close();
+		} catch (_) {
+			// already closed
+		}
+		browser = null;
+		page = null;
 	}
 }
 
 export async function scrapeItems(): Promise<Item[]> {
 	if (!page) throw new Error("Browser not launched");
 
-	// Evaluate script in browser context to get items
 	return await page.evaluate(() => {
 		const items: Item[] = [];
-		const wrappers = document.querySelectorAll(".general_item_wrapper");
-
-		wrappers.forEach((div) => {
+		for (const div of document.querySelectorAll(".general_item_wrapper")) {
 			const idParts = div.id.split("_");
-			if (idParts.length < 2) return;
+			if (idParts.length < 2) continue;
 			const id = idParts[1];
 
-			const nameEl = div.querySelector(".normal_item_name a") as HTMLElement;
+			const nameEl = div.querySelector(
+				".normal_item_name a",
+			) as HTMLElement | null;
 			const name = nameEl ? nameEl.innerText.trim() : "Unknown Item";
 
-			const costEl = div.querySelector(".item_price .blue span") as HTMLElement;
-			let cost = 0;
-			if (costEl) {
-				// Remove commas and parse
-				cost = parseInt(costEl.innerText.replace(/,/g, ""), 10);
-			}
+			const costEl = div.querySelector(
+				".item_price .blue span",
+			) as HTMLElement | null;
+			const cost = costEl
+				? Number.parseInt(costEl.innerText.replace(/,/g, ""), 10)
+				: 0;
 
 			items.push({ id, name, cost });
-		});
-
+		}
 		return items;
 	});
+}
+
+// --- Shared purchase execution ---
+
+async function executePurchase(
+	p: Page,
+	itemId: string,
+	cost: number,
+): Promise<{ ok: boolean; detail: string }> {
+	return await p.evaluate(
+		async (id: string, costVal: number) => {
+			try {
+				const response = await fetch(
+					`https://store.play.net/store/PurchaseItemConfirmed?id=${id}&qty=1&confirmation_item=yes&cost=${costVal}`,
+					{
+						headers: {
+							accept: "*/*",
+							"x-requested-with": "XMLHttpRequest",
+						},
+						referrer: `https://store.play.net/store/purchaseitem/${id}`,
+						referrerPolicy: "strict-origin-when-cross-origin",
+						body: null,
+						method: "POST",
+						mode: "cors",
+						credentials: "include",
+					},
+				);
+				const body = await response.text();
+				if (!response.ok) {
+					return {
+						ok: false,
+						detail: `HTTP ${response.status}: ${body.slice(0, 200)}`,
+					};
+				}
+				// Check for known failure indicators in the response
+				const lower = body.toLowerCase();
+				if (
+					lower.includes("insufficient") ||
+					lower.includes("unable to purchase") ||
+					lower.includes("error")
+				) {
+					return { ok: false, detail: body.slice(0, 200) };
+				}
+				return { ok: true, detail: "success" };
+			} catch (e) {
+				return { ok: false, detail: String(e) };
+			}
+		},
+		itemId,
+		cost,
+	);
+}
+
+async function delay(ms: number): Promise<void> {
+	return new Promise((r) => setTimeout(r, ms));
 }
 
 export async function purchaseItem(
 	itemId: string,
 	cost: number,
 	quantity: number,
-	onProgress?: (current: number, total: number) => void,
+	onProgress?: ProgressCallback,
 ): Promise<{ status: string }> {
 	if (!page) throw new Error("Browser not launched");
 
-	console.log(
-		`Starting purchase loop for Item ${itemId}, Cost ${cost}, Quantity ${quantity}`,
-	);
+	console.log(`Purchasing Item ${itemId} x${quantity} @ ${cost} SC each`);
 
 	for (let i = 0; i < quantity; i++) {
-		console.log(`Purchase ${i + 1}/${quantity}...`);
+		const result = await executePurchase(page, itemId, cost);
+		const label = `Purchase ${i + 1}/${quantity}`;
 
-		// Execute the fetch in the browser context to use existing cookies/session
-		const success = await page.evaluate(
-			async (id: string, costVal: number) => {
-				try {
-					const response = await fetch(
-						`https://store.play.net/store/PurchaseItemConfirmed?id=${id}&qty=1&confirmation_item=yes&cost=${costVal}`,
-						{
-							headers: {
-								accept: "*/*",
-								"x-requested-with": "XMLHttpRequest",
-							},
-							referrer: `https://store.play.net/store/purchaseitem/${id}`,
-							referrerPolicy: "strict-origin-when-cross-origin",
-							body: null,
-							method: "POST",
-							mode: "cors",
-							credentials: "include",
-						},
-					);
-					return response.ok;
-				} catch (e) {
-					console.error(e);
-					return false;
-				}
-			},
-			itemId,
-			cost,
-		);
-
-		if (success) {
-			console.log(`Purchase ${i + 1} successful.`);
+		if (result.ok) {
+			console.log(`${label} succeeded.`);
 		} else {
-			console.error(`Purchase ${i + 1} failed.`);
+			console.error(`${label} failed: ${result.detail}`);
 		}
 
-		if (onProgress) onProgress(i + 1, quantity);
+		const msg = result.ok
+			? `Bought ${i + 1}/${quantity}`
+			: `Failed ${i + 1}/${quantity}: ${result.detail}`;
+		onProgress?.(i + 1, quantity, msg);
 
-		// Wait 2 seconds (user requested)
-		if (i < quantity - 1) {
-			await new Promise((r) => setTimeout(r, 2000));
-		}
+		if (i < quantity - 1) await delay(PURCHASE_DELAY_MS);
 	}
 
-	console.log("Purchase loop complete.");
 	return { status: "complete" };
 }
 
 export async function purchaseCart(
 	cartItems: CartItem[],
-	onProgress?: (current: number, total: number, msg: string) => void,
+	onProgress?: ProgressCallback,
 ): Promise<{ status: string }> {
 	if (!page) throw new Error("Browser not launched");
 
-	console.log(`Starting cart purchase for ${cartItems.length} unique items.`);
-
-	let totalItems = 0;
-	for (const i of cartItems) {
-		totalItems += i.quantity;
-	}
-	let currentItem = 0;
+	const totalItems = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+	let current = 0;
 
 	for (const item of cartItems) {
-		console.log(`Processing Item ${item.id} (${item.quantity}x)...`);
-
 		for (let i = 0; i < item.quantity; i++) {
-			currentItem++;
-			if (onProgress)
-				onProgress(
-					currentItem,
-					totalItems,
-					`Buying ${item.name || item.id} (${i + 1}/${item.quantity})`,
-				);
+			current++;
+			const result = await executePurchase(page, item.id, item.cost);
+			const label = `${item.name || item.id} (${i + 1}/${item.quantity})`;
 
-			const success = await page.evaluate(
-				async (id: string, costVal: number) => {
-					try {
-						const response = await fetch(
-							`https://store.play.net/store/PurchaseItemConfirmed?id=${id}&qty=1&confirmation_item=yes&cost=${costVal}`,
-							{
-								headers: {
-									accept: "*/*",
-									"x-requested-with": "XMLHttpRequest",
-								},
-								referrer: `https://store.play.net/store/purchaseitem/${id}`,
-								referrerPolicy: "strict-origin-when-cross-origin",
-								body: null,
-								method: "POST",
-								mode: "cors",
-								credentials: "include",
-							},
-						);
-						return response.ok;
-					} catch (e) {
-						console.error(e);
-						return false;
-					}
-				},
-				item.id,
-				item.cost,
-			);
+			if (!result.ok) console.error(`Failed: ${label} — ${result.detail}`);
 
-			if (!success) console.error(`Failed to buy ${item.id}`);
+			const msg = result.ok
+				? `Bought ${label}`
+				: `Failed ${label}: ${result.detail}`;
+			onProgress?.(current, totalItems, msg);
 
-			// Wait 2 seconds between every purchase
-			if (currentItem < totalItems)
-				await new Promise((r) => setTimeout(r, 2000));
+			if (current < totalItems) await delay(PURCHASE_DELAY_MS);
 		}
 	}
 
