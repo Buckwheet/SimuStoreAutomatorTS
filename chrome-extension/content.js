@@ -18,7 +18,17 @@
 			const cost = costEl
 				? parseInt(costEl.innerText.replace(/,/g, ""), 10)
 				: 0;
-			items.push({ id, name, cost });
+			const iconEl = div.querySelector(".item_icon img");
+			const icon = iconEl ? iconEl.src : "";
+			const limitedEl = div.querySelector(".limited_available");
+			let desc = "";
+			if (limitedEl) {
+				const nodes = limitedEl.childNodes;
+				const last = nodes[nodes.length - 1];
+				if (last && last.nodeType === 3) desc = last.textContent.trim();
+			}
+			const subscriberOnly = !!div.querySelector(".restricted_available");
+			items.push({ id, name, cost, icon, desc, subscriberOnly });
 		}
 		return items;
 	}
@@ -149,14 +159,48 @@
 		for (const item of items) {
 			const li = document.createElement("li");
 
+			const infoDiv = document.createElement("div");
+			infoDiv.className = "ssa-item-info";
+
+			if (item.icon) {
+				const img = document.createElement("img");
+				img.className = "ssa-item-icon";
+				img.src = item.icon;
+				img.alt = item.name;
+				infoDiv.appendChild(img);
+			}
+
+			const textDiv = document.createElement("div");
+			textDiv.className = "ssa-item-text";
+
 			const nameSpan = document.createElement("span");
 			nameSpan.className = "ssa-item-name";
 			nameSpan.textContent = item.name;
 			nameSpan.title = item.name;
+			textDiv.appendChild(nameSpan);
+
+			if (item.desc) {
+				const descSpan = document.createElement("span");
+				descSpan.className = "ssa-item-desc";
+				descSpan.textContent = item.desc;
+				textDiv.appendChild(descSpan);
+			}
+
+			if (item.subscriberOnly) {
+				const badge = document.createElement("span");
+				badge.className = "ssa-badge-sub";
+				badge.textContent = "SUBSCRIBER";
+				textDiv.appendChild(badge);
+			}
+
+			infoDiv.appendChild(textDiv);
 
 			const costSpan = document.createElement("span");
 			costSpan.className = "ssa-item-cost";
 			costSpan.textContent = `${item.cost.toLocaleString()} SC`;
+
+			const actionsDiv = document.createElement("div");
+			actionsDiv.className = "ssa-item-actions";
 
 			const qty = document.createElement("input");
 			qty.type = "number";
@@ -189,7 +233,8 @@
 				await runPurchase([{ ...item, quantity: q }]);
 			});
 
-			li.append(nameSpan, costSpan, qty, cartBtn, buyBtn);
+			actionsDiv.append(qty, cartBtn, buyBtn);
+			li.append(infoDiv, costSpan, actionsDiv);
 			listEl.appendChild(li);
 		}
 		statusEl.textContent = `Found ${items.length} items.`;

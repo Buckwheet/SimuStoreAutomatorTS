@@ -109,26 +109,68 @@
 }
 .ssa-items li {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
-	padding: 6px 0;
+	padding: 8px 0;
 	border-bottom: 1px solid #eee;
-	gap: 6px;
+	gap: 8px;
 }
 .ssa-items li:last-child {
 	border-bottom: none;
 }
-.ssa-item-name {
+.ssa-item-info {
+	display: flex;
+	align-items: center;
 	flex: 1;
+	min-width: 0;
+	gap: 8px;
+}
+.ssa-item-icon {
+	width: 32px;
+	height: 32px;
+	object-fit: contain;
+	border-radius: 4px;
+	flex-shrink: 0;
+}
+.ssa-item-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.ssa-item-name {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	font-weight: 500;
+}
+.ssa-item-desc {
+	font-size: 11px;
+	color: #777;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.ssa-badge-sub {
+	display: inline-block;
+	font-size: 9px;
+	font-weight: 700;
+	color: #fff;
+	background: #e67e22;
+	padding: 1px 5px;
+	border-radius: 3px;
+	margin-top: 2px;
+	align-self: flex-start;
 }
 .ssa-item-cost {
 	color: #007bff;
 	font-weight: 600;
 	white-space: nowrap;
-	margin-right: 6px;
+	flex-shrink: 0;
+}
+.ssa-item-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
 }
 
 .ssa-items input[type="number"] {

@@ -13,6 +13,9 @@ export interface Item {
 	id: string;
 	name: string;
 	cost: number;
+	icon: string;
+	desc: string;
+	subscriberOnly: boolean;
 }
 
 export interface CartItem extends Item {
@@ -100,7 +103,22 @@ export async function scrapeItems(): Promise<Item[]> {
 				? Number.parseInt(costEl.innerText.replace(/,/g, ""), 10)
 				: 0;
 
-			items.push({ id, name, cost });
+			const iconEl = div.querySelector(
+				".item_icon img",
+			) as HTMLImageElement | null;
+			const icon = iconEl ? iconEl.src : "";
+
+			const limitedEl = div.querySelector(".limited_available");
+			let desc = "";
+			if (limitedEl) {
+				const nodes = limitedEl.childNodes;
+				const last = nodes[nodes.length - 1];
+				if (last && last.nodeType === 3) desc = last.textContent?.trim() || "";
+			}
+
+			const subscriberOnly = !!div.querySelector(".restricted_available");
+
+			items.push({ id, name, cost, icon, desc, subscriberOnly });
 		}
 		return items;
 	});
