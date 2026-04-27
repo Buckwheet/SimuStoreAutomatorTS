@@ -8,11 +8,14 @@ import * as automation from "./automation";
 
 // --- Config ---
 const PORT = Number(process.env.PORT) || 3000;
+// Generate a one-time auth token to protect API routes from cross-origin / CSRF abuse.
+// This token is injected into the served HTML so only the legitimate UI can call /api/*.
 const AUTH_TOKEN = crypto.randomBytes(32).toString("hex");
 
 const app = express();
 
-// Serve frontend files, but inject the auth token into index.html
+// Serve the main page with the auth token injected as a global JS variable.
+// This avoids storing the token in a cookie (which would defeat CSRF protection).
 app.get("/", (_req: Request, res: Response) => {
 	const path = require("node:path");
 	const fs = require("node:fs");
@@ -20,7 +23,6 @@ app.get("/", (_req: Request, res: Response) => {
 		path.join(__dirname, "..", "public", "index.html"),
 		"utf-8",
 	);
-	// Inject token as a global variable before </head>
 	const injected = html.replace(
 		"</head>",
 		`<script>window.__AUTH_TOKEN="${AUTH_TOKEN}";</script></head>`,
@@ -28,11 +30,12 @@ app.get("/", (_req: Request, res: Response) => {
 	res.type("html").send(injected);
 });
 
-// Serve other static assets normally
+// Static assets (CSS, images, etc.) don't need the token injection
 app.use(express.static("public"));
 app.use(express.json());
 
 // --- Auth middleware for /api routes ---
+// Rejects any request that doesn't include the correct token in the x-auth-token header.
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
 	const token = req.headers["x-auth-token"] || req.query.token;
 	if (token !== AUTH_TOKEN) {
@@ -45,10 +48,13 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 app.use("/api", requireAuth);
 
 // --- Concurrency lock ---
+// Prevents multiple purchase operations from running simultaneously,
+// which could cause race conditions or duplicate purchases.
 let purchaseInProgress = false;
 
 // --- API Routes ---
 
+// Launch a Puppeteer-controlled Chrome window for the user to log in
 app.get("/api/launch", async (_req: Request, res: Response) => {
 	try {
 		await automation.launchBrowser();
@@ -58,6 +64,7 @@ app.get("/api/launch", async (_req: Request, res: Response) => {
 	}
 });
 
+// Scrape the current store page for purchasable items
 app.get("/api/items", async (_req: Request, res: Response) => {
 	try {
 		const items = await automation.scrapeItems();
@@ -67,6 +74,8 @@ app.get("/api/items", async (_req: Request, res: Response) => {
 	}
 });
 
+// Shared helper: streams purchase progress back to the client as newline-delimited JSON.
+// Uses chunked transfer encoding so the UI can update the progress bar in real time.
 function streamPurchase(res: Response, purchaseFn: () => Promise<void>): void {
 	if (purchaseInProgress) {
 		res.status(409).json({ error: "A purchase is already in progress" });
@@ -89,6 +98,7 @@ function streamPurchase(res: Response, purchaseFn: () => Promise<void>): void {
 		});
 }
 
+// Buy a single item N times
 app.post("/api/buy", (req: Request, res: Response) => {
 	const { id, cost, quantity } = req.body;
 	if (!id || !cost || !quantity) {
@@ -109,6 +119,7 @@ app.post("/api/buy", (req: Request, res: Response) => {
 	});
 });
 
+// Buy all items in the cart sequentially
 app.post("/api/buy-cart", (req: Request, res: Response) => {
 	const { cart } = req.body;
 	if (!cart || !Array.isArray(cart) || cart.length === 0) {
@@ -123,6 +134,7 @@ app.post("/api/buy-cart", (req: Request, res: Response) => {
 	});
 });
 
+// Cleanly shut down the server and browser from the UI
 app.post("/api/shutdown", (_req: Request, res: Response) => {
 	res.json({ status: "Shutting down..." });
 	console.log("Shutdown requested via UI.");
@@ -130,6 +142,8 @@ app.post("/api/shutdown", (_req: Request, res: Response) => {
 });
 
 // --- Graceful shutdown ---
+// Closes the Puppeteer browser, drains HTTP connections, then exits.
+// Force-exits after 5s if connections don't drain (e.g. hanging keep-alive).
 async function gracefulShutdown(): Promise<void> {
 	console.log("Shutting down gracefully...");
 	try {
@@ -142,7 +156,6 @@ async function gracefulShutdown(): Promise<void> {
 			console.log("HTTP server closed.");
 			process.exit(0);
 		});
-		// Force exit after 5s if connections don't drain
 		setTimeout(() => process.exit(0), 5000);
 	} else {
 		process.exit(0);
@@ -152,6 +165,7 @@ async function gracefulShutdown(): Promise<void> {
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
+// Bind to 127.0.0.1 only — not accessible from other machines on the network
 const server = app.listen(PORT, "127.0.0.1", () => {
 	console.log(`Server running on http://localhost:${PORT}`);
 	console.log(`Auth token: ${AUTH_TOKEN}`);

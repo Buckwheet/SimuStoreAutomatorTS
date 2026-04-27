@@ -1,105 +1,244 @@
 # SimuStore Automator (TypeScript Edition)
 
-A simple tool to help you buy items in bulk from the SimuCoins store. This version is rebuilt in TypeScript for better safety and reliability.
+Bulk-purchase items from the [SimuCoins Store](https://store.play.net/store/purchase/gs) without clicking "Buy" dozens of times. The store only allows one item per transaction — this tool automates the repetitive clicking so you can buy 20, 50, or more in one go.
 
-## What it does
-The SimuCoins store only allows you to buy one item at a time. This tool lets you:
-1.  Select an item.
-2.  Choose a quantity (e.g., 20 or 50).
-3.  Automatically purchase them one by one for you with a safety delay.
+Two options are included:
+
+| Option | Requires Node.js? | How it works |
+|---|---|---|
+| **Server + Web UI** | Yes | Launches a local Express server with a Puppeteer-controlled browser |
+| **Chrome Extension** | No | Injects a panel directly into the store page |
+
+---
+
+## Table of Contents
+
+- [How It Works](#how-it-works)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Environment Variables](#environment-variables)
+- [Chrome Extension](#chrome-extension)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [Disclaimer](#disclaimer)
+- [License](#license)
+
+---
+
+## How It Works
+
+1. The server launches a real Chrome window via [Puppeteer](https://pptr.dev/).
+2. You log in to the SimuCoins store manually — the tool **never** sees your credentials.
+3. The web UI at `http://localhost:3000` scrapes the store page for available items.
+4. When you click **Buy Now** or **Checkout All**, the server replays the store's own purchase POST request in a loop with a configurable delay between each.
+
+All traffic stays between your machine and `store.play.net`. Nothing is sent to any third party.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│  Your Browser (http://localhost:3000)                 │
+│  ┌────────────────────────────────────────────────┐  │
+│  │  Web UI  (public/index.html)                   │  │
+│  │  - Item list, cart, progress bar               │  │
+│  │  - Streams purchase progress via chunked JSON  │  │
+│  └──────────────┬─────────────────────────────────┘  │
+│                 │ fetch /api/*                        │
+│                 ▼                                     │
+│  ┌────────────────────────────────────────────────┐  │
+│  │  Express Server  (src/server.ts)               │  │
+│  │  - Auth token injected per session             │  │
+│  │  - Concurrency lock (one purchase at a time)   │  │
+│  │  - Streams progress back to the UI             │  │
+│  └──────────────┬─────────────────────────────────┘  │
+│                 │ Puppeteer                           │
+│                 ▼                                     │
+│  ┌────────────────────────────────────────────────┐  │
+│  │  Automated Chrome  (src/automation.ts)         │  │
+│  │  - page.evaluate() runs fetch() inside the     │  │
+│  │    browser using your logged-in session         │  │
+│  └────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────┘
+         All on localhost — nothing leaves your machine
+```
+
+---
 
 ## Prerequisites
 
-Before you start, you need **Node.js** installed on your computer.
-1.  Go to [nodejs.org](https://nodejs.org/).
-2.  Download and install the **LTS** version.
-    *   *Note: This automatically installs **npm** (Node Package Manager) which is required.*
-3.  Follow the installer prompts (clicking Next until finished).
+- **Node.js 18+** — download the LTS version from [nodejs.org](https://nodejs.org/) (npm is included)
+- **Google Chrome** — Puppeteer will use a bundled Chromium, but a local Chrome install is recommended
 
-## Installation (Step-by-Step)
+---
 
-1.  **Download and Extract**
-    *   Click the green **Code** button on GitHub and select **Download ZIP**.
-    *   Find the ZIP file in your Downloads folder.
-    *   Right-click it and choose **Extract All...**.
-    *   Extract it to a folder you will look at (e.g., inside Documents).
+## Installation
 
-2.  **Open the Terminal inside the Folder**
-    *   **Crucial Step**: You need to run commands *inside* the folder you just extracted.
-    *   Open your file explorer and go into the folder.
-    *   **Easiest Way**: Hold the **Shift** key, **Right-Click** on an empty white space in the folder window, and select **"Open PowerShell window here"** or **"Open in Terminal"**.
+1. **Clone or download** the repository:
+   ```bash
+   git clone git@github.com:Buckwheet/SimuStoreAutomatorTS.git
+   cd SimuStoreAutomatorTS
+   ```
+   Or click **Code → Download ZIP** on GitHub and extract it.
 
-3.  **Install Tools**
-    *   In the blue or black window that popped up, type this and press Enter:
-        ```bash
-        npm install
-        ```
-    *   Wait for it to finish downloading dependencies.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-4.  **Build the Project**
-    *   Since this is a TypeScript project, you need to compile it once before running:
-        ```bash
-        npm run build
-        ```
+3. **Build the TypeScript:**
+   ```bash
+   npm run build
+   ```
 
-## How to Use
+---
 
-1.  Start the tool by running this command in your terminal:
-    ```bash
-    npm start
-    ```
-    *   *Alternatively, for developers making changes, you can use `npm run dev`.*
+## Usage
 
-2.  Open your web browser and go to: [http://localhost:3000](http://localhost:3000)
-3.  Click the **"Launch Browser"** button.
-    *   A new Chrome window will open.
-4.  **Log In** to the store in that new window manually.
-5.  **Navigate** to the specific store page that lists the items you want to buy.
-    *   *Example: https://store.play.net/store/purchase/gs*
-6.  Go back to the tool (at http://localhost:3000) and click **"Refresh Item List"**.
-7.  You should see a list of items.
-8.  **Buy**:
-    *   **Single Item**: Enter quantity and click **"Buy Now"** to purchase immediately.
-    *   **Shopping Cart**:
-        1.  Enter quantity and click **"Add to Cart"**.
-        2.  Repeat for other items.
-        3.  Click the **"Cart"** button at the top to view your items.
-        4.  Click **"Checkout All"** to purchase everything in the cart sequentially.
-9.  **Stop**: When you are finished, click the red **"Stop Service"** button to shut down the tool safely.
+1. **Start the server:**
+   ```bash
+   npm start
+   ```
 
-## Features
-*   **Sticky Header**: Controls stay visible while scrolling.
-*   **Progress Bar**: Real-time tracking of purchase progress.
-*   **Shopping Cart**: Queue multiple items and check out in one go.
-*   **Type Safety**: Built with TypeScript to reduce bugs and strictly define data structures.
+2. **Open the UI** at [http://localhost:3000](http://localhost:3000).
 
-## ⚠️ Important Usage Tips
+3. Click **Launch Browser** — a Chrome window opens.
 
-*   **Do NOT navigate away**: Once you click "Buy" or "Checkout", **do not touch** the automated browser window until it is finished.
-    *   The tool needs to stay on the correct page to process each transaction.
-    *   If you click a different link or close the tab while it's buying, the remaining purchases will fail.
-*   **Let it run**: You can switch back to your other windows (like YouTube or work), but leave the automated Chrome window open and alone in the background.
+4. **Log in** to the SimuCoins store manually in that window.
 
-## Security & Technical Details
+5. **Navigate** to the store page you want to buy from (e.g. `https://store.play.net/store/purchase/gs`).
 
-This tool is designed with security in mind:
+6. Back in the UI, click **Refresh List** to load available items.
 
-1.  **Runs Locally**: The code runs entirely on your own computer (`localhost`). No data is sent to us or any third party.
-2.  **No Credentials Stored**: The tool **never** asks for your username or password. You log in manually on the official website.
-3.  **Session Piggybacking**: The tool uses an automation technology called Puppeteer to control the browser. It reuses the valid login session (cookies) established when you logged in manually.
-4.  **Open Source**: The code is written in TypeScript. You can verify in `src/automation.ts` and `src/server.ts` that there is no code to extract or transmit your password.
+7. **Purchase:**
+   - **Single item** — set quantity, click **Buy Now**.
+   - **Multiple items** — add items to the cart, open the cart, click **Checkout All**.
+
+8. When finished, click **Stop Service** to shut down cleanly.
+
+> **Do not interact with the automated Chrome window while a purchase is running.** Navigating away or closing the tab will cause remaining purchases to fail. You can use other windows freely.
+
+---
+
+## Environment Variables
+
+Set these before running `npm start` to override defaults. A `.env` file is gitignored if you prefer that approach.
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | Port the Express server listens on |
+| `PURCHASE_DELAY_MS` | `2000` | Milliseconds to wait between each purchase request |
+| `STORE_URL` | `https://store.play.net/store/purchase/gs` | URL the automated browser navigates to on launch |
+
+Example:
+```bash
+PORT=8080 PURCHASE_DELAY_MS=3000 npm start
+```
+
+---
+
+## Chrome Extension
+
+A standalone alternative that requires **no server and no Node.js**. It injects a floating panel directly into the SimuCoins store page.
+
+See [`chrome-extension/README.md`](chrome-extension/README.md) for installation and usage.
+
+---
+
+## Project Structure
+
+```
+SimuStoreAutomatorTS/
+├── src/
+│   ├── server.ts          # Express server, API routes, auth, graceful shutdown
+│   └── automation.ts      # Puppeteer browser control, scraping, purchase logic
+├── dist/                  # Compiled JS (generated by `npm run build`)
+├── public/
+│   └── index.html         # Web UI (single-page, no framework)
+├── chrome-extension/
+│   ├── manifest.json      # Chrome MV3 manifest
+│   ├── content.js         # Content script — the entire extension logic
+│   ├── content.css        # Panel styles
+│   └── README.md          # Extension-specific docs
+├── package.json
+├── tsconfig.json          # TypeScript config (ES2020, strict)
+├── biome.json             # Biome linter/formatter config
+└── .husky/pre-commit      # Runs `npx biome check` before each commit
+```
+
+---
+
+## Development
+
+**Dev mode** (auto-restarts on file changes via nodemon + ts-node):
+```bash
+npm run dev
+```
+
+**Build** (compile TypeScript to `dist/`):
+```bash
+npm run build
+```
+
+**Lint & format** (Biome runs automatically on pre-commit via Husky):
+```bash
+npx biome check --write .
+```
+
+### Tooling
+
+| Tool | Purpose |
+|---|---|
+| [TypeScript](https://www.typescriptlang.org/) | Type safety, strict mode enabled |
+| [Biome](https://biomejs.dev/) | Linter + formatter (replaces ESLint + Prettier) |
+| [Husky](https://typicode.github.io/husky/) | Git hooks — runs Biome on pre-commit |
+| [nodemon](https://nodemon.io/) | Auto-restart during development |
+| [Puppeteer](https://pptr.dev/) | Headless/headed Chrome automation |
+
+---
+
+## Security
+
+- **Localhost only** — the server binds to `127.0.0.1`, not `0.0.0.0`. It is not accessible from other machines on your network.
+- **Auth token** — a random 256-bit token is generated on each server start and injected into the UI. All `/api/*` requests require this token. This prevents other tabs or local processes from making unauthorized requests (CSRF protection).
+- **No credentials stored** — you log in manually. The tool never asks for or handles your username or password.
+- **Concurrency lock** — only one purchase operation can run at a time, preventing accidental parallel purchases.
+- **XSS-safe UI** — the frontend uses `createElement`/`textContent` instead of `innerHTML` for dynamic content.
+- **Response validation** — purchase responses are checked for failure indicators (`insufficient`, `unable to purchase`, `error`) before reporting success.
+- **Graceful shutdown** — `SIGINT`/`SIGTERM` close the browser and drain HTTP connections before exiting.
+- **Open source** — read `src/server.ts` and `src/automation.ts` yourself. There is no obfuscated code.
+
+---
 
 ## Troubleshooting
 
-*   **"Browser disconnected"**: If you accidentally close the automated browser window, just click "Launch Browser" again.
-*   **"No items found"**: Make sure the automated browser window is on the actual store page with the "Buy" buttons before you click Refresh.
+| Problem | Solution |
+|---|---|
+| **"Browser disconnected"** | The automated Chrome window was closed. Click **Launch Browser** again. |
+| **"No items found"** | Make sure the automated browser is on a store page with items (e.g. `/store/purchase/gs`) before clicking Refresh. |
+| **"A purchase is already in progress"** | Wait for the current purchase to finish, or restart the server. |
+| **"Forbidden" (403)** | The auth token is invalid. Refresh the UI page — a new token is injected on each page load. |
+| **Port already in use** | Another process is using port 3000. Set `PORT=3001 npm start` or stop the other process. |
 
-## ⚠️ Disclaimer
+---
 
-**Use responsibly.** This tool automates purchases on your own account using your own session. Please keep the following in mind:
+## Disclaimer
 
-*   **Keep quantities reasonable.** Don't queue up hundreds of items at once. Stick to small, sensible batches. Hammering the store with rapid-fire requests is not what this tool is for and could get your account flagged or cause issues with the store.
-*   **No liability.** This software is provided **as-is, with no warranty of any kind**. The authors are not responsible for any consequences of using this tool, including but not limited to: incorrect purchases, lost SimuCoins, account actions taken by Simutronics, or any other damages.
-*   **Not affiliated with Simutronics.** This is an independent, community-made tool. It is not endorsed, sponsored, or supported by Simutronics.
-*   **Released under the ISC License.** You are free to use, modify, and distribute this software. See the `LICENSE` file or `package.json` for details.
-*   **Use at your own risk.** By using this tool, you accept full responsibility for any actions performed on your account.
+**Use responsibly.** This tool automates purchases on your own account using your own session.
+
+- **Keep quantities reasonable.** Small, sensible batches. Rapid-fire bulk requests could get your account flagged.
+- **No liability.** This software is provided **as-is, with no warranty**. The authors are not responsible for incorrect purchases, lost SimuCoins, account actions by Simutronics, or any other damages.
+- **Not affiliated with Simutronics.** This is an independent community tool. It is not endorsed or supported by Simutronics.
+- **Use at your own risk.** By using this tool you accept full responsibility for any actions performed on your account.
+
+---
+
+## License
+
+[ISC](https://opensource.org/licenses/ISC) — see `package.json` for details.

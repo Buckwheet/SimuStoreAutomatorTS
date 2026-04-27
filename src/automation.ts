@@ -1,9 +1,11 @@
 import puppeteer, { type Browser, type Page } from "puppeteer";
 
+// --- Config (overridable via environment variables) ---
 const PURCHASE_DELAY_MS = Number(process.env.PURCHASE_DELAY_MS) || 2000;
 const STORE_URL =
 	process.env.STORE_URL || "https://store.play.net/store/purchase/gs";
 
+// Singleton browser/page — only one automated session at a time
 let browser: Browser | null = null;
 let page: Page | null = null;
 
@@ -19,6 +21,11 @@ export interface CartItem extends Item {
 
 type ProgressCallback = (current: number, total: number, msg: string) => void;
 
+/**
+ * Launch a headed Chrome window and navigate to the store.
+ * If the browser is already open and connected, this is a no-op.
+ * If it was disconnected (user closed it), re-launches.
+ */
 export async function launchBrowser(): Promise<void> {
 	console.log("Launching browser...");
 	if (browser) {
@@ -37,6 +44,7 @@ export async function launchBrowser(): Promise<void> {
 		args: ["--start-maximized"],
 	});
 
+	// Auto-clear refs if the user closes the browser window manually
 	browser.on("disconnected", () => {
 		console.log("Browser disconnected.");
 		browser = null;
@@ -52,6 +60,7 @@ export async function launchBrowser(): Promise<void> {
 	console.log("Browser launched successfully.");
 }
 
+/** Close the browser if it's open. Safe to call multiple times. */
 export async function closeBrowser(): Promise<void> {
 	if (browser) {
 		try {
@@ -64,6 +73,11 @@ export async function closeBrowser(): Promise<void> {
 	}
 }
 
+/**
+ * Scrape purchasable items from the current store page.
+ * Runs inside the browser context via page.evaluate().
+ * Looks for .general_item_wrapper elements with an ID, name link, and price span.
+ */
 export async function scrapeItems(): Promise<Item[]> {
 	if (!page) throw new Error("Browser not launched");
 
@@ -92,8 +106,11 @@ export async function scrapeItems(): Promise<Item[]> {
 	});
 }
 
-// --- Shared purchase execution ---
-
+/**
+ * Execute a single purchase by replaying the store's own POST endpoint.
+ * Runs inside the browser context so it uses the user's authenticated session cookies.
+ * Returns { ok, detail } — checks both HTTP status and response body for failure indicators.
+ */
 async function executePurchase(
 	p: Page,
 	itemId: string,
@@ -124,7 +141,7 @@ async function executePurchase(
 						detail: `HTTP ${response.status}: ${body.slice(0, 200)}`,
 					};
 				}
-				// Check for known failure indicators in the response
+				// Check for known failure strings in the response body
 				const lower = body.toLowerCase();
 				if (
 					lower.includes("insufficient") ||
@@ -147,6 +164,10 @@ async function delay(ms: number): Promise<void> {
 	return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Purchase a single item N times with a delay between each request.
+ * Calls onProgress after each attempt so the server can stream updates to the UI.
+ */
 export async function purchaseItem(
 	itemId: string,
 	cost: number,
@@ -178,6 +199,10 @@ export async function purchaseItem(
 	return { status: "complete" };
 }
 
+/**
+ * Purchase all items in a cart sequentially.
+ * Flattens the cart into individual purchases and tracks overall progress across all items.
+ */
 export async function purchaseCart(
 	cartItems: CartItem[],
 	onProgress?: ProgressCallback,

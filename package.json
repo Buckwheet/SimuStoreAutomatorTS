@@ -1,7 +1,7 @@
 {
 	"name": "simustore-automator-ts",
 	"version": "1.0.0",
-	"description": "TypeScript version of SimuStoreAutomator",
+	"description": "Bulk-purchase items from the SimuCoins store via a local web UI or Chrome extension",
 	"main": "dist/server.js",
 	"scripts": {
 		"start": "node dist/server.js",
@@ -9,8 +9,18 @@
 		"build": "tsc",
 		"prepare": "husky"
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": [
+		"simucoin",
+		"gemstone-iv",
+		"simutronics",
+		"store-automation",
+		"puppeteer"
+	],
+	"author": "Buckwheet",
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/Buckwheet/SimuStoreAutomatorTS.git"
+	},
 	"license": "ISC",
 	"dependencies": {
 		"express": "^4.18.2",
