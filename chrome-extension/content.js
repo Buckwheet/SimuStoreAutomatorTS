@@ -34,6 +34,21 @@
 	}
 
 	// --- Purchase one item via the store's own endpoint ---
+	function validatePurchaseResponse(status, body) {
+		if (!(status >= 200 && status < 300)) {
+			return { ok: false, detail: `HTTP ${status}` };
+		}
+		const lower = body.toLowerCase();
+		if (
+			lower.includes("insufficient") ||
+			lower.includes("unable to purchase") ||
+			lower.includes("error")
+		) {
+			return { ok: false, detail: body.slice(0, 200) };
+		}
+		return { ok: true, detail: "success" };
+	}
+
 	async function executePurchase(id, cost) {
 		try {
 			const res = await fetch(
@@ -47,16 +62,7 @@
 				},
 			);
 			const body = await res.text();
-			if (!res.ok) return { ok: false, detail: `HTTP ${res.status}` };
-			const lower = body.toLowerCase();
-			if (
-				lower.includes("insufficient") ||
-				lower.includes("unable to purchase") ||
-				lower.includes("error")
-			) {
-				return { ok: false, detail: body.slice(0, 200) };
-			}
-			return { ok: true, detail: "success" };
+			return validatePurchaseResponse(res.status, body);
 		} catch (e) {
 			return { ok: false, detail: String(e) };
 		}
@@ -65,6 +71,9 @@
 	function delay(ms) {
 		return new Promise((r) => setTimeout(r, ms));
 	}
+
+	// --- Test hook / console API (harmless, also handy for power users) ---
+	window.SSA = { scrapeItems, validatePurchaseResponse };
 
 	// --- Build the UI panel ---
 	const panel = document.createElement("div");
@@ -98,6 +107,7 @@
           <button class="ssa-btn ssa-btn-buy" id="ssa-checkout" style="flex:1;">Buy All</button>
         </div>
       </div>
+      <div class="ssa-footer" id="ssa-footer"><a href="https://github.com/sponsors/Buckwheet" target="_blank" rel="noopener">♥ Support</a></div>
     </div>`;
 	document.body.appendChild(panel);
 
