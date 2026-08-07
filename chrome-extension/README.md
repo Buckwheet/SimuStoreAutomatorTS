@@ -43,7 +43,7 @@ The extension runs as a **content script** on `store.play.net/store/purchase/*` 
 3. Waits a configurable delay between each purchase (default: 2 seconds).
 4. Validates each response for failure indicators (`insufficient`, `unable to purchase`, `error`).
 
-**No data leaves your browser.** No external servers are contacted. The full source is in `content.js` — read it yourself.
+**No data or credentials leave your browser.** The only network calls are the store's own purchase requests using your existing login session. No external servers are contacted. The full source is in `content.js` — read it yourself.
 
 ---
 
@@ -78,6 +78,19 @@ chrome-extension/
 - Works on any store page that uses the `.general_item_wrapper` layout.
 - The panel auto-injects on page load and prevents duplicate injection if the page is re-navigated.
 
+## Building the store zip
+
+The zip uploaded to the extension stores is produced from this folder with **zero transformation** — the packaged files are byte-identical to the source here:
+
+```bash
+git clone https://github.com/Buckwheet/SimuStoreAutomatorTS.git
+cd SimuStoreAutomatorTS
+npm ci
+npm run build:ext
+```
+
+Output: `dist-ext/chrome-<version>.zip`, `dist-ext/edge-<version>.zip`, `dist-ext/firefox-<version>.zip` (`scripts/build-extensions.mjs` simply zips this folder).
+
 ---
 
 ## Security Audit
@@ -99,7 +112,7 @@ Chrome extensions can be dangerous — malicious ones have been caught stealing 
 
 ### What the code does NOT contain
 
-You can verify all of this by reading `content.js` (311 lines, unminified, unobfuscated):
+You can verify all of this by reading `content.js` (unminified, unobfuscated):
 
 - **No background script or service worker.** Nothing runs when you're not on the store page.
 - **No Chrome API calls.** Zero use of `chrome.runtime`, `chrome.cookies`, `chrome.storage`, `chrome.tabs`, or any other `chrome.*` API.

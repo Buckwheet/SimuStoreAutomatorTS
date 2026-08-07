@@ -69,9 +69,9 @@ SimuStoreAutomatorTS/
 
 ## Development
 
-**Install dependencies:**
+**Install dependencies (lockfile-pinned for exact reproduction):**
 ```bash
-npm install
+npm ci
 ```
 
 **Run tests** (Vitest):
