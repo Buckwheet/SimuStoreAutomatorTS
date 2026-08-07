@@ -1,153 +1,54 @@
-# SimuStore Automator (TypeScript Edition)
+# SimuStore Automator
 
-Bulk-purchase items from the [SimuCoins Store](https://store.play.net/store/purchase/gs) without clicking "Buy" dozens of times. The store only allows one item per transaction — this tool automates the repetitive clicking so you can buy 20, 50, or more in one go.
+Bulk-purchase items from the [SimuCoins Store](https://store.play.net/store/purchase/gs) without clicking "Buy" dozens of times. The store only allows one item per transaction — this browser extension automates the repetitive clicking so you can buy 20, 50, or more in one go.
 
-Two options are included:
-
-| Option | Requires Node.js? | How it works |
-|---|---|---|
-| **Server + Web UI** | Yes | Launches a local Express server with a Puppeteer-controlled browser |
-| **Chrome Extension** | No | Injects a panel directly into the store page |
+The extension runs entirely in your browser. No server, no Node.js, nothing to install beyond the extension itself.
 
 ---
 
 ## Table of Contents
 
-- [How It Works](#how-it-works)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Environment Variables](#environment-variables)
-- [Chrome Extension](#chrome-extension)
 - [Project Structure](#project-structure)
 - [Development](#development)
 - [Security](#security)
 - [Troubleshooting](#troubleshooting)
 - [Disclaimer](#disclaimer)
+- [Support](#support)
 - [License](#license)
-
----
-
-## How It Works
-
-1. The server launches a real Chrome window via [Puppeteer](https://pptr.dev/).
-2. You log in to the SimuCoins store manually — the tool **never** sees your credentials.
-3. The web UI at `http://localhost:3000` scrapes the store page for available items.
-4. When you click **Buy Now** or **Checkout All**, the server replays the store's own purchase POST request in a loop with a configurable delay between each.
-
-All traffic stays between your machine and `store.play.net`. Nothing is sent to any third party.
-
----
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────┐
-│  Your Browser (http://localhost:3000)                 │
-│  ┌────────────────────────────────────────────────┐  │
-│  │  Web UI  (public/index.html)                   │  │
-│  │  - Item list, cart, progress bar               │  │
-│  │  - Streams purchase progress via chunked JSON  │  │
-│  └──────────────┬─────────────────────────────────┘  │
-│                 │ fetch /api/*                        │
-│                 ▼                                     │
-│  ┌────────────────────────────────────────────────┐  │
-│  │  Express Server  (src/server.ts)               │  │
-│  │  - Auth token injected per session             │  │
-│  │  - Concurrency lock (one purchase at a time)   │  │
-│  │  - Streams progress back to the UI             │  │
-│  └──────────────┬─────────────────────────────────┘  │
-│                 │ Puppeteer                           │
-│                 ▼                                     │
-│  ┌────────────────────────────────────────────────┐  │
-│  │  Automated Chrome  (src/automation.ts)         │  │
-│  │  - page.evaluate() runs fetch() inside the     │  │
-│  │    browser using your logged-in session         │  │
-│  └────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────┘
-         All on localhost — nothing leaves your machine
-```
-
----
-
-## Prerequisites
-
-- **Node.js 18+** — download the LTS version from [nodejs.org](https://nodejs.org/) (npm is included)
-- **Google Chrome** — Puppeteer will use a bundled Chromium, but a local Chrome install is recommended
 
 ---
 
 ## Installation
 
-1. **Clone or download** the repository:
-   ```bash
-   git clone git@github.com:Buckwheet/SimuStoreAutomatorTS.git
-   cd SimuStoreAutomatorTS
-   ```
-   Or click **Code → Download ZIP** on GitHub and extract it.
+**Store links:** Chrome Web Store, Edge Add-ons, and Firefox AMO listings are pending. This page will be updated when the extension is live.
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+**Development / manual install** (Chrome or Edge):
 
-3. **Build the TypeScript:**
-   ```bash
-   npm run build
-   ```
+1. Download or clone this repository.
+2. Open `chrome://extensions/` (or `edge://extensions/`).
+3. Enable **Developer mode**.
+4. Click **Load unpacked** and select the `chrome-extension/` folder.
+5. Navigate to any SimuCoins store purchase page (e.g. `https://store.play.net/store/purchase/gs`).
+
+A floating **SimuStore Automator** panel appears in the bottom-right corner of the page.
+
+See [`chrome-extension/README.md`](chrome-extension/README.md) for full extension documentation.
 
 ---
 
 ## Usage
 
-1. **Start the server:**
-   ```bash
-   npm start
-   ```
+1. **Refresh Items** — scans the current store page for purchasable items.
+2. Set a quantity for any item, then:
+   - **Buy** — purchases that item immediately.
+   - **+Cart** — adds it to the cart for batch checkout.
+3. Switch to the **Cart** tab to review queued items.
+4. Click **Buy All** to purchase everything in the cart sequentially (a configurable delay between purchases, default 2 seconds).
+5. A progress bar tracks completion; the status line shows which item is being purchased and reports failures inline.
 
-2. **Open the UI** at [http://localhost:3000](http://localhost:3000).
-
-3. Click **Launch Browser** — a Chrome window opens.
-
-4. **Log in** to the SimuCoins store manually in that window.
-
-5. **Navigate** to the store page you want to buy from (e.g. `https://store.play.net/store/purchase/gs`).
-
-6. Back in the UI, click **Refresh List** to load available items.
-
-7. **Purchase:**
-   - **Single item** — set quantity, click **Buy Now**.
-   - **Multiple items** — add items to the cart, open the cart, click **Checkout All**.
-
-8. When finished, click **Stop Service** to shut down cleanly.
-
-> **Do not interact with the automated Chrome window while a purchase is running.** Navigating away or closing the tab will cause remaining purchases to fail. You can use other windows freely.
-
----
-
-## Environment Variables
-
-Set these before running `npm start` to override defaults. A `.env` file is gitignored if you prefer that approach.
-
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `3000` | Port the Express server listens on |
-| `PURCHASE_DELAY_MS` | `2000` | Milliseconds to wait between each purchase request |
-| `STORE_URL` | `https://store.play.net/store/purchase/gs` | URL the automated browser navigates to on launch |
-
-Example:
-```bash
-PORT=8080 PURCHASE_DELAY_MS=3000 npm start
-```
-
----
-
-## Chrome Extension
-
-A standalone alternative that requires **no server and no Node.js**. It injects a floating panel directly into the SimuCoins store page.
-
-See [`chrome-extension/README.md`](chrome-extension/README.md) for installation and usage.
+> **Do not navigate away or close the tab while a purchase is running** — remaining purchases will fail. You can use other tabs freely.
 
 ---
 
@@ -155,64 +56,56 @@ See [`chrome-extension/README.md`](chrome-extension/README.md) for installation 
 
 ```
 SimuStoreAutomatorTS/
-├── src/
-│   ├── server.ts          # Express server, API routes, auth, graceful shutdown
-│   └── automation.ts      # Puppeteer browser control, scraping, purchase logic
-├── dist/                  # Compiled JS (generated by `npm run build`)
-├── public/
-│   └── index.html         # Web UI (single-page, no framework)
-├── chrome-extension/
-│   ├── manifest.json      # Chrome MV3 manifest
-│   ├── content.js         # Content script — the entire extension logic
-│   ├── content.css        # Panel styles
-│   └── README.md          # Extension-specific docs
+├── chrome-extension/       # The extension (MV3 manifest, content script, styles)
+├── scripts/                # Build scripts (extension zips)
+├── test/                   # Vitest unit tests
+├── docs/                   # Store listing copy and release docs
 ├── package.json
-├── tsconfig.json          # TypeScript config (ES2020, strict)
-├── biome.json             # Biome linter/formatter config
-└── .husky/pre-commit      # Runs `npx biome check` before each commit
+├── biome.json              # Biome linter/formatter config
+└── .husky/pre-commit       # Runs lint + tests before each commit
 ```
 
 ---
 
 ## Development
 
-**Dev mode** (auto-restarts on file changes via nodemon + ts-node):
+**Install dependencies:**
 ```bash
-npm run dev
+npm install
 ```
 
-**Build** (compile TypeScript to `dist/`):
+**Run tests** (Vitest):
 ```bash
-npm run build
+npm test
 ```
 
-**Lint & format** (Biome runs automatically on pre-commit via Husky):
+**Lint & format** (Biome):
 ```bash
-npx biome check --write .
+npx biome lint .
+npx biome check .
 ```
 
-### Tooling
+**Build extension zips** (Chrome/Edge + Firefox, named `*-1.1.0.zip`):
+```bash
+npm run build:ext
+```
 
-| Tool | Purpose |
-|---|---|
-| [TypeScript](https://www.typescriptlang.org/) | Type safety, strict mode enabled |
-| [Biome](https://biomejs.dev/) | Linter + formatter (replaces ESLint + Prettier) |
-| [Husky](https://typicode.github.io/husky/) | Git hooks — runs Biome on pre-commit |
-| [nodemon](https://nodemon.io/) | Auto-restart during development |
-| [Puppeteer](https://pptr.dev/) | Headless/headed Chrome automation |
+**Lint the extension** (Mozilla's web-ext):
+```bash
+npx web-ext lint --source-dir chrome-extension
+```
+
+Lint, format checks, and tests all run automatically on every commit via Husky.
 
 ---
 
 ## Security
 
-- **Localhost only** — the server binds to `127.0.0.1`, not `0.0.0.0`. It is not accessible from other machines on your network.
-- **Auth token** — a random 256-bit token is generated on each server start and injected into the UI. All `/api/*` requests require this token. This prevents other tabs or local processes from making unauthorized requests (CSRF protection).
-- **No credentials stored** — you log in manually. The tool never asks for or handles your username or password.
-- **Concurrency lock** — only one purchase operation can run at a time, preventing accidental parallel purchases.
-- **XSS-safe UI** — the frontend uses `createElement`/`textContent` instead of `innerHTML` for dynamic content.
-- **Response validation** — purchase responses are checked for failure indicators (`insufficient`, `unable to purchase`, `error`) before reporting success.
-- **Graceful shutdown** — `SIGINT`/`SIGTERM` close the browser and drain HTTP connections before exiting.
-- **Open source** — read `src/server.ts` and `src/automation.ts` yourself. There is no obfuscated code.
+- **Zero permissions** — the manifest's `permissions` array is empty.
+- **No data collection** — no analytics, no telemetry. The only network calls are the store's own purchase requests using your existing login session.
+- **Store-only scope** — the single `host_permissions` entry is `https://store.play.net/*`, so the panel can run on the store and nowhere else.
+- **No credentials stored** — you are already logged in; the extension never asks for or handles your username or password.
+- **Open source** — read `chrome-extension/content.js` yourself. No obfuscated code.
 
 ---
 
@@ -220,11 +113,9 @@ npx biome check --write .
 
 | Problem | Solution |
 |---|---|
-| **"Browser disconnected"** | The automated Chrome window was closed. Click **Launch Browser** again. |
-| **"No items found"** | Make sure the automated browser is on a store page with items (e.g. `/store/purchase/gs`) before clicking Refresh. |
-| **"A purchase is already in progress"** | Wait for the current purchase to finish, or restart the server. |
-| **"Forbidden" (403)** | The auth token is invalid. Refresh the UI page — a new token is injected on each page load. |
-| **Port already in use** | Another process is using port 3000. Set `PORT=3001 npm start` or stop the other process. |
+| **Panel doesn't appear** | Make sure you're on a store purchase page (e.g. `/store/purchase/gs`), the extension is enabled, and reload the page. |
+| **"No items found"** | Make sure you're on a store page that lists items before clicking **Refresh Items**. |
+| **Purchase fails** | Check the status line for the failure reason (e.g. `insufficient` funds). The store only allows one item per transaction — wait for the delay between purchases. |
 
 ---
 
@@ -239,13 +130,14 @@ npx biome check --write .
 
 ---
 
-## License
-
-[ISC](https://opensource.org/licenses/ISC) — see `package.json` for details.
----
-
 ## Support
 
 Free forever. If this saves you time, a coffee is appreciated.
 
 [![Sponsor](https://img.shields.io/github/sponsors/Buckwheet?label=Sponsor)](https://github.com/sponsors/Buckwheet)
+
+---
+
+## License
+
+[ISC](https://opensource.org/licenses/ISC) — see `package.json` for details.

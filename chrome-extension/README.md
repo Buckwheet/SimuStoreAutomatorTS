@@ -80,21 +80,6 @@ chrome-extension/
 
 ---
 
-## Comparison with the Server Version
-
-| Feature | Chrome Extension | Server + Web UI |
-|---|---|---|
-| Requires Node.js | No | Yes |
-| Requires installation | Load unpacked in Chrome | `npm install && npm run build` |
-| Works without a terminal | Yes | No |
-| Separate browser window | No (runs in your tab) | Yes (Puppeteer-controlled Chrome) |
-| Configurable delay | Edit `content.js` | Environment variable |
-| Auth token / CSRF protection | N/A (same-origin) | Yes |
-
-Choose the extension for simplicity. Choose the server version if you want a dedicated UI or plan to extend the automation further.
-
----
-
 ## Security Audit
 
 Chrome extensions can be dangerous — malicious ones have been caught stealing auth tokens, cookies, and session data from other websites. This extension is designed to be fully auditable so you can verify it yourself in minutes.
