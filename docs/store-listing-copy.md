@@ -19,8 +19,8 @@ pick any quantity, add it to the cart, and hit Buy All — with a live progress 
 so you can see every purchase complete.
 
 The extension runs entirely on the store page you are logged into. It works
-same-origin, collects no data, and stores no credentials — nothing leaves your
-browser.
+same-origin, collects no data, and stores no credentials — no data or
+credentials leave your browser.
 
 SimuStore Automator is not affiliated with or endorsed by Simutronics. Use it at
 your own risk; keep quantities reasonable, and you are responsible for the
