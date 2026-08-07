@@ -250,6 +250,22 @@ The IIFE closure hides the logic. Minimal refactor: keep the IIFE, but expose th
 
 ---
 
+### Task 9: Strip the Node.js server path (extension-only repo)
+
+**Decision (user, 2026-08-07):** The Node.js server (Express/Puppeteer) is no longer publicly available or supported. The repo becomes extension-only, in preparation for store submission. Server code remains recoverable in git history; no history rewrite.
+
+**Files:**
+- Delete: `src/` (server.ts, automation.ts), `public/`, `tsconfig.json`, `.env.example`
+- Modify: `package.json` (remove express + puppeteer deps; remove typescript/nodemon/ts-node/@types/express/@types/node devDeps; remove main + start/dev/build scripts; description becomes extension-only), regenerate package-lock.json
+- Modify: `.husky/pre-commit` (drop `npx tsc --noEmit` — no TS remains)
+- Modify: `README.md` (rewrite extension-only: remove server sections, Node.js prerequisites, env vars, server security/troubleshooting rows)
+- Modify: `SECURITY.md` (drop the localhost-server line)
+- Verify: `docs/store-listing-copy.md` and `chrome-extension/README.md` contain no server references (fix if any)
+
+**Gates:** vitest 6/6, biome clean, web-ext lint 0/0/0, `npm run build:ext` (1.1.0 zips), pre-commit chain (now biome + vitest).
+
+---
+
 ## Self-Review
 
 - **Spec coverage:** All four asks covered — move-forward strategy (Part A), dev plan (Tasks 0-8), monetization (A5 + Task 6), skills usage (A6 + Task 5 references). 
