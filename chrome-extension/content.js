@@ -107,6 +107,7 @@
           <button class="ssa-btn ssa-btn-buy" id="ssa-checkout" style="flex:1;">Buy All</button>
         </div>
       </div>
+      <div class="ssa-footer" id="ssa-footer"><a href="https://github.com/sponsors/Buckwheet" target="_blank" rel="noopener">♥ Support</a></div>
     </div>`;
 	document.body.appendChild(panel);
 

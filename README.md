@@ -242,3 +242,10 @@ npx biome check --write .
 ## License
 
 [ISC](https://opensource.org/licenses/ISC) — see `package.json` for details.
+---
+
+## Support
+
+Free forever. If this saves you time, a coffee is appreciated.
+
+[![Sponsor](https://img.shields.io/github/sponsors/Buckwheet?label=Sponsor)](https://github.com/sponsors/Buckwheet)

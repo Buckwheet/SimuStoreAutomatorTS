@@ -85,4 +85,9 @@ describe("panel", () => {
 	it("injects the #ssa-panel element into the page", () => {
 		expect(win.document.getElementById("ssa-panel")).not.toBeNull();
 	});
+	it("renders a Support footer link to the GitHub Sponsors page", () => {
+		const link = win.document.querySelector("#ssa-footer a");
+		expect(link).not.toBeNull();
+		expect(link.href).toBe("https://github.com/sponsors/Buckwheet");
+	});
 });
