@@ -27,6 +27,7 @@ SimuStore Automator is a single-purpose **content-script extension (Manifest V3)
 - No remote code, no `eval`/`new Function`, no background service worker, no external network calls — every `fetch()` targets `store.play.net`.
 - `data_collection_permissions: { "required": ["none"] }` — declared and accurate: no data is collected or transmitted to any third party. The only requests are the store's own purchase endpoint with the user's session cookies.
 - The only DOM access is to the store's own purchase page (item names, prices, IDs) to build the bulk-buy UI.
+- **Android (Firefox for Android):** the extension uses no browser APIs (plain DOM + same-origin fetch), and `web-ext lint` is clean for both desktop and Android at `strict_min_version: 142.0`. Android distribution requires opting in at AMO submission ("supports Android"); runtime-tested on desktop only so far.
 - The repository's git history contains an earlier, now-removed local Node.js server variant (removed 2026-08-07 when the repo became extension-only). The current tree is the submitted artifact.
 - Not affiliated with or endorsed by Simutronics. This is an independent community tool; users accept responsibility for their account actions (disclaimer in the listing copy and README).
 
