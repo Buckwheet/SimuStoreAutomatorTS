@@ -3,5 +3,6 @@ nav_test_results.csv
 login_test_results.csv
 node_modules
 dist
+dist-ext
 .env
 .DS_Store
