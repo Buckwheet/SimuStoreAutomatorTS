@@ -73,6 +73,19 @@
 	overflow-y: auto;
 	flex: 1;
 }
+.ssa-footer {
+	padding: 4px 12px 10px;
+	text-align: center;
+}
+.ssa-footer a {
+	font-size: 11px;
+	color: #777;
+	text-decoration: none;
+}
+.ssa-footer a:hover {
+	color: #007bff;
+	text-decoration: underline;
+}
 
 .ssa-status {
 	padding: 8px;
