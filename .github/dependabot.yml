@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
+    ignore:
+      # jsdom >= 30 requires Node >= 22; CI/dev floor is Node 20 (web-ext@10).
+      - dependency-name: "jsdom"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
