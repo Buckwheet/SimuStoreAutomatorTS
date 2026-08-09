@@ -216,6 +216,7 @@
 			qty.type = "number";
 			qty.value = "1";
 			qty.min = "1";
+			qty.className = "ssa-qty";
 
 			const cartBtn = document.createElement("button");
 			cartBtn.className = "ssa-btn ssa-btn-cart";
@@ -300,6 +301,10 @@
 	document
 		.getElementById("ssa-checkout")
 		.addEventListener("click", async () => {
+			if (purchasing) {
+				statusEl.textContent = "A purchase is already running.";
+				return;
+			}
 			if (!cart.length) return;
 			if (
 				!confirm(
@@ -355,7 +360,7 @@
 
 	function setButtons(disabled) {
 		for (const btn of panel.querySelectorAll(
-			".ssa-btn-buy, .ssa-btn-go, #ssa-checkout",
+			".ssa-btn-buy, .ssa-btn-go, #ssa-checkout, .ssa-btn-cart, .ssa-btn-clear, #ssa-clear-cart, .ssa-qty",
 		)) {
 			btn.disabled = disabled;
 		}
