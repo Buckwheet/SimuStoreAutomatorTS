@@ -22,7 +22,18 @@ The extension runs entirely in your browser. No server, no Node.js, nothing to i
 
 ## Installation
 
-**Store links:** Chrome Web Store, Edge Add-ons, and Firefox AMO listings are pending. This page will be updated when the extension is live.
+**Store links (pending store approval — this page is updated once live):**
+
+| Store | Link |
+| --- | --- |
+| Chrome Web Store | _pending_ — upload `dist-ext/chrome-1.1.1.zip` |
+| Microsoft Edge Add-ons | _pending_ — upload `dist-ext/edge-1.1.1.zip` |
+| Firefox AMO | _pending_ — upload `dist-ext/firefox-1.1.1.zip` |
+
+**GitHub Releases (available now):** the signed-off zips are attached to every
+[GitHub Release](https://github.com/Buckwheet/SimuStoreAutomatorTS/releases) —
+download `chrome-1.1.1.zip`, unpack, and `Load unpacked` (below) for a
+source-verifiable install without waiting for store review.
 
 **Development / manual install** (Chrome or Edge):
 
@@ -35,6 +46,8 @@ The extension runs entirely in your browser. No server, no Node.js, nothing to i
 A floating **SimuStore Automator** panel appears in the bottom-right corner of the page.
 
 See [`chrome-extension/README.md`](chrome-extension/README.md) for full extension documentation.
+
+See [docs/release-checklist.md](docs/release-checklist.md) for the release-to-stores procedure.
 
 ---
 
