@@ -4,5 +4,7 @@ login_test_results.csv
 node_modules
 dist
 dist-ext
+__pycache__
+*.pyc
 .env
 .DS_Store
