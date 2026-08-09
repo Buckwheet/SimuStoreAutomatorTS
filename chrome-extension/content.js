@@ -323,6 +323,9 @@
 		purchasing = true;
 		const totalQty = items.reduce((s, i) => s + i.quantity, 0);
 		let current = 0;
+		let okCount = 0;
+		let failCount = 0;
+		let failDetail = "";
 
 		progressEl.style.display = "";
 		barEl.style.width = "0%";
@@ -330,27 +333,39 @@
 		barEl.style.background = "#28a745";
 		setButtons(true);
 
-		for (const item of items) {
-			for (let i = 0; i < item.quantity; i++) {
-				current++;
-				statusEl.textContent = `Buying ${item.name} (${i + 1}/${item.quantity})…`;
-				const result = await executePurchase(item.id, item.cost);
-				if (!result.ok) {
-					statusEl.textContent = `Failed: ${item.name} — ${result.detail}`;
-					barEl.style.background = "#dc3545";
+		try {
+			for (const item of items) {
+				for (let i = 0; i < item.quantity; i++) {
+					current++;
+					statusEl.textContent = `Buying ${item.name} (${i + 1}/${item.quantity})…`;
+					const result = await executePurchase(item.id, item.cost);
+					if (!result.ok) {
+						failCount++;
+						failDetail = `${item.name} — ${result.detail}`;
+						statusEl.textContent = `Failed: ${failDetail}`;
+						barEl.style.background = "#dc3545";
+					} else {
+						okCount++;
+					}
+					const pct = Math.round((current / totalQty) * 100);
+					barEl.style.width = `${pct}%`;
+					barEl.textContent = `${pct}%`;
+					if (current < totalQty) await delay(DELAY_MS);
 				}
-				const pct = Math.round((current / totalQty) * 100);
-				barEl.style.width = `${pct}%`;
-				barEl.textContent = `${pct}%`;
-				if (current < totalQty) await delay(DELAY_MS);
 			}
-		}
 
-		statusEl.textContent = `Done! Purchased ${totalQty} item(s).`;
-		barEl.style.width = "100%";
-		barEl.textContent = "Done!";
-		purchasing = false;
-		setButtons(false);
+			barEl.style.width = "100%";
+			if (failCount === 0) {
+				statusEl.textContent = `Done! Purchased ${okCount} of ${totalQty} item(s).`;
+				barEl.textContent = "Done!";
+			} else {
+				statusEl.textContent = `Finished: purchased ${okCount} of ${totalQty} item(s), ${failCount} failed (last: ${failDetail}).`;
+				barEl.textContent = "Failed";
+			}
+		} finally {
+			purchasing = false;
+			setButtons(false);
+		}
 	}
 
 	function setButtons(disabled) {
