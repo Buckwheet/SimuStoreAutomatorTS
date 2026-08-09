@@ -81,6 +81,26 @@ describe("validatePurchaseResponse", () => {
 	});
 });
 
+describe("parseQty", () => {
+	it("coerces 0, negative, empty, and non-numeric input to 1", () => {
+		expect(SSA.parseQty("0")).toBe(1);
+		expect(SSA.parseQty("-5")).toBe(1);
+		expect(SSA.parseQty("")).toBe(1);
+		expect(SSA.parseQty("abc")).toBe(1);
+	});
+	it("passes through valid positive integers", () => {
+		expect(SSA.parseQty("1")).toBe(1);
+		expect(SSA.parseQty("42")).toBe(42);
+	});
+	it("caps absurdly large quantities at MAX_QTY (999) to prevent unbounded loops", () => {
+		expect(SSA.parseQty("99999999999999999999")).toBe(999);
+		expect(SSA.parseQty("1000")).toBe(999);
+	});
+	it("stops numeric parsing at the first non-digit (1e3 -> 1)", () => {
+		expect(SSA.parseQty("1e3")).toBe(1);
+	});
+});
+
 describe("panel", () => {
 	it("injects the #ssa-panel element into the page", () => {
 		expect(win.document.getElementById("ssa-panel")).not.toBeNull();

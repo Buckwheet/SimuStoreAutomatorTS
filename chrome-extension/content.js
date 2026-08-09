@@ -2,6 +2,7 @@
 	if (document.getElementById("ssa-panel")) return;
 
 	const DELAY_MS = 2000;
+	const MAX_QTY = 999;
 	let cart = [];
 	let purchasing = false;
 
@@ -72,8 +73,16 @@
 		return new Promise((r) => setTimeout(r, ms));
 	}
 
+	// --- Quantity parsing: clamp to [1, MAX_QTY] so 0/negative/NaN/huge values
+	// can never reach the purchase loop (min="1" is cosmetic without a form). ---
+	function parseQty(raw) {
+		const n = Number.parseInt(String(raw), 10);
+		if (!Number.isInteger(n) || n < 1) return 1;
+		return Math.min(n, MAX_QTY);
+	}
+
 	// --- Test hook / console API (harmless, also handy for power users) ---
-	window.SSA = { scrapeItems, validatePurchaseResponse };
+	window.SSA = { scrapeItems, validatePurchaseResponse, parseQty };
 
 	// --- Build the UI panel ---
 	const panel = document.createElement("div");
@@ -221,9 +230,10 @@
 			cartBtn.className = "ssa-btn ssa-btn-cart";
 			cartBtn.textContent = "+Cart";
 			cartBtn.addEventListener("click", () => {
-				const q = parseInt(qty.value, 10) || 1;
+				const q = parseQty(qty.value);
 				const existing = cart.find((c) => c.id === item.id);
-				if (existing) existing.quantity += q;
+				if (existing)
+					existing.quantity = Math.min(existing.quantity + q, MAX_QTY);
 				else cart.push({ ...item, quantity: q });
 				updateCartCount();
 				statusEl.textContent = `Added ${q}x ${item.name} to cart.`;
@@ -233,7 +243,7 @@
 			buyBtn.className = "ssa-btn ssa-btn-buy";
 			buyBtn.textContent = "Buy";
 			buyBtn.addEventListener("click", async () => {
-				const q = parseInt(qty.value, 10) || 1;
+				const q = parseQty(qty.value);
 				if (
 					!confirm(
 						`Buy ${q}x ${item.name} for ${(item.cost * q).toLocaleString()} SC?`,
