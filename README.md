@@ -32,7 +32,7 @@ The extension runs entirely in your browser. No server, no Node.js, nothing to i
 
 **GitHub Releases (available now):** the signed-off zips are attached to every
 [GitHub Release](https://github.com/Buckwheet/SimuStoreAutomatorTS/releases) —
-download `chrome-1.1.1.zip`, unpack, and `Load unpacked` (below) for a
+download `chrome-1.1.2.zip`, unpack, and `Load unpacked` (below) for a
 source-verifiable install without waiting for store review.
 
 **Development / manual install** (Chrome or Edge):
@@ -108,7 +108,7 @@ npx biome lint .
 npx biome check .
 ```
 
-**Build extension zips** (Chrome/Edge + Firefox, named `*-1.1.1.zip`):
+**Build extension zips** (Chrome/Edge + Firefox, named `*-1.1.2.zip`):
 ```bash
 npm run build:ext
 ```

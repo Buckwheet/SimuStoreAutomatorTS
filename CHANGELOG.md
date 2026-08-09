@@ -4,6 +4,34 @@ All notable changes to the SimuStore Automator extension are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-08-09
+
+Security audit run 3 (Cloudflare security-audit-skill methodology, run 3 of 3:
+no MEDIUM+ findings; two LOW issues fixed).
+
+### Fixed
+
+- **Cart price fidelity** — cart entries now dedupe by id AND cost AND name.
+  Two store cards sharing an id at different prices previously merged
+  silently at the first card's price, so the Buy-All confirm total could
+  misrepresent what was added; identical-id/different-price cards now render
+  as separate lines and the total is truthful.
+- **Panel stays on-screen** — drag and resize positions are clamped to the
+  viewport, so the panel can no longer be dragged fully off-screen (reload
+  was the only recovery); a window-blur listener clears a drag/resize left
+  stuck by a focus loss (e.g. Alt-Tab mid-gesture).
+
+### Changed
+
+- SECURITY.md: corrected the residual dev-tooling advisory count — image-size
+  is pinned at exactly 2.0.2 with **2** unfixed high advisories (CVE-2025-71319
+  is fixed in 2.0.2), not 3.
+
+### Security
+
+- No new advisories; the same 2 dev-only image-size residuals remain (linter
+  only, nothing ships).
+
 ## [1.1.1] - 2026-08-09
 
 Security-focused patch release following two full security audits
