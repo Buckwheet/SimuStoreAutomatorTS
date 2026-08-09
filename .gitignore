@@ -4,6 +4,7 @@ login_test_results.csv
 node_modules
 dist
 dist-ext
+docs/superpowers/
 __pycache__
 *.pyc
 .env
