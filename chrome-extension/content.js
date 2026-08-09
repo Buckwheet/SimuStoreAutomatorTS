@@ -66,6 +66,7 @@
 					referrer: `https://store.play.net/store/purchaseitem/${encodeURIComponent(id)}`,
 					referrerPolicy: "strict-origin-when-cross-origin",
 					credentials: "include",
+					signal: AbortSignal.timeout(30000),
 				},
 			);
 			const body = await res.text();
