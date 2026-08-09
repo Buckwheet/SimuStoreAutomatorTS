@@ -74,7 +74,7 @@ SimuStoreAutomatorTS/
 | Requirement | Version | Install |
 |---|---|---|
 | OS | Any (Windows, macOS, Linux) | — |
-| Node.js | 20 LTS recommended (18+ supported) | [nodejs.org](https://nodejs.org/) LTS installer, or nvm |
+| Node.js | 20 LTS or newer (required by web-ext@10) | [nodejs.org](https://nodejs.org/) LTS installer, or nvm |
 | npm | 10+ (ships with Node.js) | included with Node.js |
 
 No other tools are required. The extension files in `chrome-extension/` are the final, unminified source — no transpilation or bundling happens at build time. The icons are committed PNGs; regenerating them (optional) needs Python 3.11+ with Pillow (`python scripts/generate-icons.py`).
