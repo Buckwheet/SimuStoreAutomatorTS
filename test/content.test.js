@@ -101,6 +101,19 @@ describe("parseQty", () => {
 	});
 });
 
+describe("parseCost", () => {
+	it("parses plain and comma-formatted prices", () => {
+		expect(SSA.parseCost("1,250")).toBe(1250);
+		expect(SSA.parseCost("500")).toBe(500);
+		expect(SSA.parseCost("0")).toBe(0);
+	});
+	it("returns null for missing or unparsable prices", () => {
+		expect(SSA.parseCost("")).toBeNull();
+		expect(SSA.parseCost("FREE")).toBeNull();
+		expect(SSA.parseCost("--")).toBeNull();
+	});
+});
+
 describe("panel", () => {
 	it("injects the #ssa-panel element into the page", () => {
 		expect(win.document.getElementById("ssa-panel")).not.toBeNull();
