@@ -16,9 +16,8 @@
 			const nameEl = div.querySelector(".normal_item_name a");
 			const name = nameEl ? nameEl.innerText.trim() : "Unknown Item";
 			const costEl = div.querySelector(".item_price .blue span");
-			const cost = costEl
-				? parseInt(costEl.innerText.replace(/,/g, ""), 10)
-				: 0;
+			const cost = parseCost(costEl ? costEl.innerText : "");
+			if (cost === null) continue;
 			const iconEl = div.querySelector(".item_icon img");
 			const icon = iconEl ? iconEl.src : "";
 			const limitedEl = div.querySelector(".limited_available");
@@ -87,8 +86,15 @@
 		return Math.min(n, MAX_QTY);
 	}
 
+	// --- Cost parsing: items with a missing or unparsable price are skipped
+	// rather than offered at NaN/0 (mirrors the parseQty invariant). ---
+	function parseCost(text) {
+		const n = Number.parseInt(String(text ?? "").replace(/,/g, ""), 10);
+		return Number.isInteger(n) && n >= 0 ? n : null;
+	}
+
 	// --- Test hook / console API (harmless, also handy for power users) ---
-	window.SSA = { scrapeItems, validatePurchaseResponse, parseQty };
+	window.SSA = { scrapeItems, validatePurchaseResponse, parseQty, parseCost };
 
 	// --- Build the UI panel ---
 	const panel = document.createElement("div");
@@ -356,6 +362,13 @@
 
 		try {
 			for (const item of items) {
+				if (!Number.isInteger(item.cost) || item.cost < 0) {
+					failCount++;
+					failDetail = `${item.name} — invalid price`;
+					statusEl.textContent = `Failed: ${failDetail}`;
+					barEl.style.background = "#dc3545";
+					continue;
+				}
 				for (let i = 0; i < item.quantity; i++) {
 					current++;
 					statusEl.textContent = `Buying ${item.name} (${i + 1}/${item.quantity})…`;
