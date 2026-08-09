@@ -19,6 +19,12 @@
 	flex-direction: column;
 	overflow: hidden;
 }
+.ssa-body {
+	padding: 12px;
+	overflow-y: auto;
+	flex: 1;
+}
+
 #ssa-panel.collapsed {
 	max-height: 42px;
 	min-height: unset;
@@ -68,11 +74,6 @@
 	padding: 0 4px;
 }
 
-.ssa-body {
-	padding: 12px;
-	overflow-y: auto;
-	flex: 1;
-}
 .ssa-footer {
 	padding: 4px 12px 10px;
 	text-align: center;
