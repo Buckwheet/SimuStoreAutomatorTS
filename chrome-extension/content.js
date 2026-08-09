@@ -245,7 +245,10 @@
 			cartBtn.textContent = "+Cart";
 			cartBtn.addEventListener("click", () => {
 				const q = parseQty(qty.value);
-				const existing = cart.find((c) => c.id === item.id);
+				const existing = cart.find(
+					(c) =>
+						c.id === item.id && c.cost === item.cost && c.name === item.name,
+				);
 				if (existing)
 					existing.quantity = Math.min(existing.quantity + q, MAX_QTY);
 				else cart.push({ ...item, quantity: q });
@@ -411,6 +414,20 @@
 		}
 	}
 
+	// --- Keep the panel inside the viewport (drag + resize positions) ---
+	function clampPosition(x, y) {
+		return [
+			Math.min(
+				Math.max(x, 0),
+				Math.max(window.innerWidth - panel.offsetWidth, 0),
+			),
+			Math.min(
+				Math.max(y, 0),
+				Math.max(window.innerHeight - panel.offsetHeight, 0),
+			),
+		];
+	}
+
 	// --- Draggable header ---
 	let dragging = false,
 		dx = 0,
@@ -425,8 +442,9 @@
 	});
 	document.addEventListener("mousemove", (e) => {
 		if (!dragging) return;
-		panel.style.left = `${e.clientX - dx}px`;
-		panel.style.top = `${e.clientY - dy}px`;
+		const [x, y] = clampPosition(e.clientX - dx, e.clientY - dy);
+		panel.style.left = `${x}px`;
+		panel.style.top = `${y}px`;
 		panel.style.right = "auto";
 	});
 	document.addEventListener("mouseup", () => {
@@ -473,7 +491,7 @@
 		if (resizing.includes("w")) {
 			const newW = Math.max(minW, startW - dxR);
 			panel.style.width = `${newW}px`;
-			panel.style.left = `${startL + startW - newW}px`;
+			panel.style.left = `${clampPosition(startL + startW - newW, 0)[0]}px`;
 			panel.style.right = "auto";
 		}
 		if (resizing.includes("s")) {
@@ -484,11 +502,17 @@
 			const newH = Math.max(minH, startH - dyR);
 			panel.style.height = `${newH}px`;
 			panel.style.maxHeight = "none";
-			panel.style.top = `${startT + startH - newH}px`;
+			panel.style.top = `${clampPosition(0, startT + startH - newH)[1]}px`;
 		}
 	});
 
 	document.addEventListener("mouseup", () => {
+		resizing = null;
+	});
+
+	// Clear a drag/resize left stuck by a focus loss (e.g. Alt-Tab mid-gesture).
+	window.addEventListener("blur", () => {
+		dragging = false;
 		resizing = null;
 	});
 })();
