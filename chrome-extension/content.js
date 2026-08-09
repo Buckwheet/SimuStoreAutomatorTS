@@ -51,12 +51,18 @@
 
 	async function executePurchase(id, cost) {
 		try {
+			const params = new URLSearchParams({
+				id,
+				qty: "1",
+				confirmation_item: "yes",
+				cost: String(cost),
+			});
 			const res = await fetch(
-				`https://store.play.net/store/PurchaseItemConfirmed?id=${id}&qty=1&confirmation_item=yes&cost=${cost}`,
+				`https://store.play.net/store/PurchaseItemConfirmed?${params.toString()}`,
 				{
 					method: "POST",
 					headers: { accept: "*/*", "x-requested-with": "XMLHttpRequest" },
-					referrer: `https://store.play.net/store/purchaseitem/${id}`,
+					referrer: `https://store.play.net/store/purchaseitem/${encodeURIComponent(id)}`,
 					referrerPolicy: "strict-origin-when-cross-origin",
 					credentials: "include",
 				},
@@ -172,7 +178,7 @@
 			const infoDiv = document.createElement("div");
 			infoDiv.className = "ssa-item-info";
 
-			if (item.icon) {
+			if (item.icon?.startsWith("https://store.play.net/")) {
 				const img = document.createElement("img");
 				img.className = "ssa-item-icon";
 				img.src = item.icon;
