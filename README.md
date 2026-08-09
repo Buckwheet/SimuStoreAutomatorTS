@@ -95,7 +95,7 @@ npx biome lint .
 npx biome check .
 ```
 
-**Build extension zips** (Chrome/Edge + Firefox, named `*-1.1.0.zip`):
+**Build extension zips** (Chrome/Edge + Firefox, named `*-1.1.1.zip`):
 ```bash
 npm run build:ext
 ```
