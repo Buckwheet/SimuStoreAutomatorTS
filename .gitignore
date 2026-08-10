@@ -5,6 +5,7 @@ node_modules
 dist
 dist-ext
 docs/superpowers/
+progress.md
 __pycache__
 *.pyc
 .env
